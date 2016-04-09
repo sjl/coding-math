@@ -33,6 +33,13 @@
      (progn ,@body)
      (pop-matrix)))
 
+(defmacro wrap (place min max)
+  ;; todo: how do i places
+  (with-gensyms (min-val max-val)
+    `(let ((,min-val ,min) (,max-val ,max))
+      (when (< ,place ,min-val) (setf ,place ,max-val))
+      (when (> ,place ,max-val) (setf ,place ,min-val)))))
+
 
 (defun draw-ship (ship angle thrustingp)
   (in-context
@@ -45,12 +52,6 @@
       (rect -10 -3 10 6) ; engine
       (ngon 3 0 0 10 10) ; hull
       (ngon 3 6 0 6 3)))) ; cockpit
-
-(defun wrap (position-vec)
-  (when (< (vec-x position-vec) 0) (setf (vec-x position-vec) *width*))
-  (when (> (vec-x position-vec) *width*) (setf (vec-x position-vec) 0))
-  (when (< (vec-y position-vec) 0) (setf (vec-y position-vec) *height*))
-  (when (> (vec-y position-vec) *height*) (setf (vec-y position-vec) 0)))
 
 
 (defsketch cm (:width *width*
@@ -69,7 +70,8 @@
   (when (zerop (mod frame 20))
     (calc-fps 20))
   (particle-update! ship)
-  (wrap (particle-pos ship))
+  (wrap (particle-x ship) 0 *width*)
+  (wrap (particle-y ship) 0 *height*)
   (when turning-left (decf angle 0.05))
   (when turning-right (incf angle 0.05))
   (when thrusting

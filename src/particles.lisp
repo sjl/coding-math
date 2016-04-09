@@ -20,6 +20,13 @@
   (vec-y (particle-pos particle)))
 
 
+(defun (setf particle-x) (new-value particle)
+  (setf (vec-x (particle-pos particle)) new-value))
+
+(defun (setf particle-y) (new-value particle)
+  (setf (vec-y (particle-pos particle)) new-value))
+
+
 (defun particle-update! (particle)
   (vec-add! (particle-pos particle)
             (particle-vel particle))
