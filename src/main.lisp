@@ -59,24 +59,26 @@
                :debug :scancode-d)
     ((mx 0)
      (my 0)
-     (ship (make-particle center-x center-y 0 0))
-     (angle 0)
      (frame 1)
-     (turning-left nil)
-     (turning-right nil)
-     (thrusting nil))
+     (sun (make-particle center-x center-y
+                         :mass 2000.0))
+     (planet (make-particle (+ center-x 200) center-y
+                            :speed 3.0
+                            :direction (- (/ tau 4))
+                            ))
+     )
   (background (gray 1))
   (incf frame)
+  ;;
+  (particle-gravitate-to! planet sun)
+  (particle-update! planet)
+  (with-pen (make-pen :stroke (gray 0) :fill (rgb 1.0 1.0 0.0))
+    (circle (particle-x sun) (particle-y sun) 50))
+  (with-pen (make-pen :stroke (gray 0) :fill (rgb 0.0 1.0 0.0))
+    (circle (particle-x planet) (particle-y planet) 10))
+  ;;
   (when (zerop (mod frame 20))
     (calc-fps 20))
-  (particle-update! ship)
-  (wrap (particle-x ship) 0 *width*)
-  (wrap (particle-y ship) 0 *height*)
-  (when turning-left (decf angle 0.05))
-  (when turning-right (incf angle 0.05))
-  (when thrusting
-    (particle-accelerate! ship (make-vec-md 0.1 angle)))
-  (draw-ship ship angle thrusting)
   (draw-fps))
 
 
@@ -100,25 +102,25 @@
                   pairs)))))
 
 
-(defun keydown (instance scancode)
-  (scancode-case scancode
-    (:scancode-left (setf (slot-value instance 'turning-left) t))
-    (:scancode-right (setf (slot-value instance 'turning-right) t))
-    (:scancode-up (setf (slot-value instance 'thrusting) t))))
+; (defun keydown (instance scancode)
+;   (scancode-case scancode
+;     (:scancode-left (setf (slot-value instance 'turning-left) t))
+;     (:scancode-right (setf (slot-value instance 'turning-right) t))
+;     (:scancode-up (setf (slot-value instance 'thrusting) t))))
 
-(defun keyup (instance scancode)
-  (scancode-case scancode
-    (:scancode-left (setf (slot-value instance 'turning-left) nil))
-    (:scancode-right (setf (slot-value instance 'turning-right) nil))
-    (:scancode-up (setf (slot-value instance 'thrusting) nil))))
+; (defun keyup (instance scancode)
+;   (scancode-case scancode
+;     (:scancode-left (setf (slot-value instance 'turning-left) nil))
+;     (:scancode-right (setf (slot-value instance 'turning-right) nil))
+;     (:scancode-up (setf (slot-value instance 'thrusting) nil))))
 
 
-(defmethod kit.sdl2:keyboard-event ((instance cm) state timestamp repeatp keysym)
-  (declare (ignore timestamp repeatp))
-  (cond
-    ((eql state :keyup) (keyup instance (sdl2:scancode-value keysym)))
-    ((eql state :keydown) (keydown instance (sdl2:scancode-value keysym)))
-    (t nil)))
+; (defmethod kit.sdl2:keyboard-event ((instance cm) state timestamp repeatp keysym)
+;   (declare (ignore timestamp repeatp))
+;   (cond
+;     ((eql state :keyup) (keyup instance (sdl2:scancode-value keysym)))
+;     ((eql state :keydown) (keydown instance (sdl2:scancode-value keysym)))
+;     (t nil)))
 
 
 ;;;; Run

@@ -5,7 +5,7 @@
    (y :type 'real :initarg :y :accessor vec-y)))
 
 
-(defun make-vec (x y)
+(defun make-vec (&optional (x 0) (y 0))
   (make-instance 'vec :x x :y y))
 
 (defun make-vec-md (magnitude angle)
