@@ -47,7 +47,7 @@
     (rotate (degrees angle))
     (when thrustingp
       (with-pen (make-pen :fill (rgb 1.0 0.0 0.0))
-        (ngon 3 -15 0 10 6))) ; fire 
+        (ngon 3 -15 0 10 6))) ; fire
     (with-pen (make-pen :stroke (gray 0) :fill (gray 0.5))
       (rect -10 -3 10 6) ; engine
       (ngon 3 0 0 10 10) ; hull
@@ -60,22 +60,13 @@
     ((mx 0)
      (my 0)
      (frame 1)
-     (sun (make-particle center-x center-y
-                         :mass 2000.0))
-     (planet (make-particle (+ center-x 200) center-y
-                            :speed 3.0
-                            :direction (- (/ tau 4))
-                            ))
      )
   (background (gray 1))
   (incf frame)
   ;;
-  (particle-gravitate-to! planet sun)
-  (particle-update! planet)
-  (with-pen (make-pen :stroke (gray 0) :fill (rgb 1.0 1.0 0.0))
-    (circle (particle-x sun) (particle-y sun) 50))
   (with-pen (make-pen :stroke (gray 0) :fill (rgb 0.0 1.0 0.0))
-    (circle (particle-x planet) (particle-y planet) 10))
+    (circle center-x center-y
+            (map-range 0 *height* 5 100 my)))
   ;;
   (when (zerop (mod frame 20))
     (calc-fps 20))
@@ -83,7 +74,7 @@
 
 
 ;;;; Mouse
-(defmethod mousemotion-event ((window cm) ts b x y xrel yrel)
+(defmethod kit.sdl2:mousemotion-event ((window cm) ts b x y xrel yrel)
   (declare (ignore ts b xrel yrel))
   (with-slots (mx my) window
     (setf mx x)

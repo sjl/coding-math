@@ -7,4 +7,6 @@
   (:use #:cl
         #:sketch
         #:coding-math.quickutils
-        #:coding-math.utils))
+        #:coding-math.utils)
+  (:shadow
+    #:normalize))
