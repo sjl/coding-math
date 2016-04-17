@@ -64,27 +64,32 @@
     ((mx 0)
      (my 0)
      (frame 1)
-     (particles (loop :repeat 30
-                      :collect (make-particle center-x *height*
-                                              :gravity 0.05
-                                              :speed (random-range 1.0 6.0)
-                                              :direction (random-around (* tau 3/4) (/ tau 30))
-                                              :radius (random-around 5 3.0))))
-     )
+     (particle (make-particle center-x *height*
+                              :gravity 0.025
+                              :speed (random-range 4.0 6.0)
+                              :direction (random tau)
+                              :radius 5))
+     (bounce -0.7))
   (background (gray 1))
   (incf frame)
   ;;
   (with-pen (make-pen :stroke (gray 0) :fill (gray 0.5))
-    (loop :for particle :in particles :do
-          (draw-particle particle)
-          (particle-update! particle)
-          (when (> (particle-y particle)
-                   (+ (particle-radius particle)
-                      *height*))
-            (setf (particle-x particle) center-x
-                  (particle-y particle) *height*
-                  (vec-magnitude (particle-vel particle)) (random-range 1.0 6.0)
-                  (vec-angle (particle-vel particle)) (random-around (* tau 3/4) (/ tau 30))))))
+    (draw-particle particle)
+    (mulf (vec-magnitude (particle-vel particle)) 0.998)
+    (particle-update! particle)
+    (let ((r (particle-radius particle)))
+      (when (> (+ (particle-x particle) r) *width*)
+        (setf (particle-x particle) (- *width* r))
+        (mulf (vec-x (particle-vel particle)) bounce))
+      (when (< (- (particle-x particle) r) 0)
+        (setf (particle-x particle) r)
+        (mulf (vec-x (particle-vel particle)) bounce))
+      (when (> (+ (particle-y particle) r) *height*)
+        (setf (particle-y particle) (- *height* r))
+        (mulf (vec-y (particle-vel particle)) bounce))
+      (when (< (- (particle-y particle) r) 0)
+        (setf (particle-y particle) r)
+        (mulf (vec-y (particle-vel particle)) bounce))))
   ;;
   (when (zerop (mod frame 20))
     (calc-fps 20))
@@ -112,25 +117,28 @@
                   pairs)))))
 
 
-; (defun keydown (instance scancode)
-;   (scancode-case scancode
-;     (:scancode-left (setf (slot-value instance 'turning-left) t))
-;     (:scancode-right (setf (slot-value instance 'turning-right) t))
-;     (:scancode-up (setf (slot-value instance 'thrusting) t))))
+(defun keydown (instance scancode)
+  (scancode-case scancode
+                 ))
 
-; (defun keyup (instance scancode)
-;   (scancode-case scancode
-;     (:scancode-left (setf (slot-value instance 'turning-left) nil))
-;     (:scancode-right (setf (slot-value instance 'turning-right) nil))
-;     (:scancode-up (setf (slot-value instance 'thrusting) nil))))
+(defun keyup (instance scancode)
+  (scancode-case scancode
+    (:scancode-space
+     (setf (vec-magnitude (particle-vel (slot-value instance 'particle)))
+           (random-range 4.0 6.0)
+           (vec-angle (particle-vel (slot-value instance 'particle)))
+           (random tau)
+           )
+     )
+    ))
 
 
-; (defmethod kit.sdl2:keyboard-event ((instance cm) state timestamp repeatp keysym)
-;   (declare (ignore timestamp repeatp))
-;   (cond
-;     ((eql state :keyup) (keyup instance (sdl2:scancode-value keysym)))
-;     ((eql state :keydown) (keydown instance (sdl2:scancode-value keysym)))
-;     (t nil)))
+(defmethod kit.sdl2:keyboard-event ((instance cm) state timestamp repeatp keysym)
+  (declare (ignore timestamp repeatp))
+  (cond
+    ((eql state :keyup) (keyup instance (sdl2:scancode-value keysym)))
+    ((eql state :keydown) (keydown instance (sdl2:scancode-value keysym)))
+    (t nil)))
 
 
 ;;;; Run
