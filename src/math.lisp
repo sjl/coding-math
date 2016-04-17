@@ -43,6 +43,12 @@
   (lerp dest-from dest-to
         (normalize source-from source-to source-val)))
 
+(defun clamp (min max n)
+  (cond
+    ((> n max) max)
+    ((< n min) min)
+    (t n)))
+
 
 ;; Wrapping
 (defun wrap-zero (max val)

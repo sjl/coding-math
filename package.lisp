@@ -1,6 +1,7 @@
 (defpackage #:coding-math.utils
   (:use #:cl #:coding-math.quickutils)
   (:export
+    #:mulf
     #:dividesp))
 
 (defpackage #:coding-math

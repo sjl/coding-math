@@ -64,45 +64,45 @@
     ((mx 0)
      (my 0)
      (frame 1)
-     (particle (make-particle center-x *height*
-                              :gravity 0.025
-                              :speed (random-range 4.0 6.0)
-                              :direction (random tau)
-                              :radius 5))
+     (rect-w 300)
+     (rect-h 200)
+     (rect-x (- center-x (/ 300 2)))
+     (rect-y (- center-y (/ 200 2)))
+     (cx 0)
+     (cy 0)
+     (cr 10)
      (bounce -0.7))
   (background (gray 1))
   (incf frame)
   ;;
+  (with-pen (make-pen :stroke (gray 0.3) :fill (gray 0.8))
+    (rect (- rect-x cr)
+          (- rect-y cr)
+          (+ rect-w cr cr)
+          (+ rect-h cr cr)))
   (with-pen (make-pen :stroke (gray 0) :fill (gray 0.5))
-    (draw-particle particle)
-    (mulf (vec-magnitude (particle-vel particle)) 0.998)
-    (particle-update! particle)
-    (let ((r (particle-radius particle)))
-      (when (> (+ (particle-x particle) r) *width*)
-        (setf (particle-x particle) (- *width* r))
-        (mulf (vec-x (particle-vel particle)) bounce))
-      (when (< (- (particle-x particle) r) 0)
-        (setf (particle-x particle) r)
-        (mulf (vec-x (particle-vel particle)) bounce))
-      (when (> (+ (particle-y particle) r) *height*)
-        (setf (particle-y particle) (- *height* r))
-        (mulf (vec-y (particle-vel particle)) bounce))
-      (when (< (- (particle-y particle) r) 0)
-        (setf (particle-y particle) r)
-        (mulf (vec-y (particle-vel particle)) bounce))))
+    (circle cx cy cr))
   ;;
   (when (zerop (mod frame 20))
     (calc-fps 20))
-  (draw-fps)
-  )
+  (draw-fps))
 
 
 ;;;; Mouse
 (defmethod kit.sdl2:mousemotion-event ((window cm) ts b x y xrel yrel)
   (declare (ignore ts b xrel yrel))
-  (with-slots (mx my) window
+  (with-slots (mx my rect-x rect-y rect-w rect-h cx cy cr) window
     (setf mx x)
-    (setf my y)))
+    (setf my y)
+    ;;
+    (setf cx (clamp rect-x
+                    (+ rect-x rect-w)
+                    x))
+    (setf cy (clamp rect-y
+                    (+ rect-y rect-h)
+                    y))
+    ;;
+    ))
 
 
 ;;;; Keyboard
