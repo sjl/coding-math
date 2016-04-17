@@ -1,5 +1,9 @@
 (in-package #:coding-math)
 
+(declaim (optimize (speed 3)
+                   (safety 2)
+                   (debug 0)))
+
 ;;;; Config
 (defparameter *width* 600)
 (defparameter *height* 400)
@@ -13,6 +17,7 @@
   (get-internal-real-time))
 
 (defvar *fps* 0.0)
+(defvar *mspf* 0.0)
 
 
 (defun calc-fps (frames)
@@ -20,10 +25,12 @@
          (elapsed (float (/ (- current-draw *last-draw*)
                             internal-time-units-per-second))))
     (setf *last-draw* current-draw)
+    (setf *mspf* (* 1000 (/ elapsed frames)))
     (setf *fps* (* frames (/ 1 elapsed)))))
 
 (defun draw-fps ()
-  (text (format nil "FPS: ~,1F" *fps*) 0 0))
+  (text (format nil "MSPF: ~,1F" *mspf*) 0 0)
+  (text (format nil "FPS: ~,1F" *fps*) 0 20))
 
 
 ;;;; Sketch
@@ -33,25 +40,22 @@
      (progn ,@body)
      (pop-matrix)))
 
-(defmacro wrap (place min max)
-  ;; todo: how do i places
-  (with-gensyms (min-val max-val)
-    `(let ((,min-val ,min) (,max-val ,max))
-      (when (< ,place ,min-val) (setf ,place ,max-val))
-      (when (> ,place ,max-val) (setf ,place ,min-val)))))
+
+(defun particle-oob-p (particle)
+  (let ((r (particle-radius particle)))
+    (or (outside-p (- 0 r)
+                   (+ *width* r)
+                   (particle-x particle))
+        (outside-p (- 0 r)
+                   (+ *height* r)
+                   (particle-y particle)))))
 
 
-(defun draw-ship (ship angle thrustingp)
-  (in-context
-    (translate (particle-x ship) (particle-y ship))
-    (rotate (degrees angle))
-    (when thrustingp
-      (with-pen (make-pen :fill (rgb 1.0 0.0 0.0))
-        (ngon 3 -15 0 10 6))) ; fire
-    (with-pen (make-pen :stroke (gray 0) :fill (gray 0.5))
-      (rect -10 -3 10 6) ; engine
-      (ngon 3 0 0 10 10) ; hull
-      (ngon 3 6 0 6 3)))) ; cockpit
+(declaim (inline draw-particle))
+(defun draw-particle (particle)
+  (circle (particle-x particle)
+          (particle-y particle)
+          (particle-radius particle)))
 
 
 (defsketch cm (:width *width*
@@ -60,17 +64,32 @@
     ((mx 0)
      (my 0)
      (frame 1)
+     (particles (loop :repeat 30
+                      :collect (make-particle center-x *height*
+                                              :gravity 0.05
+                                              :speed (random-range 1.0 6.0)
+                                              :direction (random-around (* tau 3/4) (/ tau 30))
+                                              :radius (random-around 5 3.0))))
      )
   (background (gray 1))
   (incf frame)
   ;;
-  (with-pen (make-pen :stroke (gray 0) :fill (rgb 0.0 1.0 0.0))
-    (circle center-x center-y
-            (map-range 0 *height* 5 100 my)))
+  (with-pen (make-pen :stroke (gray 0) :fill (gray 0.5))
+    (loop :for particle :in particles :do
+          (draw-particle particle)
+          (particle-update! particle)
+          (when (> (particle-y particle)
+                   (+ (particle-radius particle)
+                      *height*))
+            (setf (particle-x particle) center-x
+                  (particle-y particle) *height*
+                  (vec-magnitude (particle-vel particle)) (random-range 1.0 6.0)
+                  (vec-angle (particle-vel particle)) (random-around (* tau 3/4) (/ tau 30))))))
   ;;
   (when (zerop (mod frame 20))
     (calc-fps 20))
-  (draw-fps))
+  (draw-fps)
+  )
 
 
 ;;;; Mouse
@@ -116,4 +135,3 @@
 
 ;;;; Run
 (defparameter *demo* (make-instance 'cm))
-

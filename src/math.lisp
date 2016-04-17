@@ -4,6 +4,15 @@
 (defconstant tau (* pi 2))
 
 
+;; Random
+(defun random-range (min max)
+  (+ min (random (- max min))))
+
+(defun random-around (val range)
+  (random-range (- val range)
+                (+ val range)))
+
+
 ;; Number range mapping
 (defun normalize (min max val)
   (/ (- val min)
@@ -33,3 +42,19 @@
   "Map `source-val` from the source range to the destination range."
   (lerp dest-from dest-to
         (normalize source-from source-to source-val)))
+
+
+;; Wrapping
+(defun wrap-zero (max val)
+  "Wrap `val` around the range [0, max)."
+  (mod val max))
+
+(defun wrap-range (min max val)
+  "Wrap `val` around the range [min, max)."
+  (+ min
+     (mod (- val min)
+          (- max min))))
+
+(defun outside-p (min max val)
+  (or (< val min)
+      (> val max)))
