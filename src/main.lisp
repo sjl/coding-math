@@ -8,39 +8,10 @@
 (defparameter *width* 600)
 (defparameter *height* 400)
 
-(defparameter center-x (/ *width* 2))
-(defparameter center-y (/ *height* 2))
-
-
-;;;; FPS
-(defvar *last-draw*
-  (get-internal-real-time))
-
-(defvar *fps* 0.0)
-(defvar *mspf* 0.0)
-
-
-(defun calc-fps (frames)
-  (let* ((current-draw (get-internal-real-time))
-         (elapsed (float (/ (- current-draw *last-draw*)
-                            internal-time-units-per-second))))
-    (setf *last-draw* current-draw)
-    (setf *mspf* (* 1000 (/ elapsed frames)))
-    (setf *fps* (* frames (/ 1 elapsed)))))
-
-(defun draw-fps ()
-  (text (format nil "MSPF: ~,1F" *mspf*) 0 0)
-  (text (format nil "FPS: ~,1F" *fps*) 0 20))
-
+(defparameter *center-x* (/ *width* 2))
+(defparameter *center-y* (/ *height* 2))
 
 ;;;; Sketch
-(defmacro in-context (&rest body)
-  `(prog1
-     (push-matrix)
-     (progn ,@body)
-     (pop-matrix)))
-
-
 (defun particle-oob-p (particle)
   (let ((r (particle-radius particle)))
     (or (outside-p (- 0 r)
@@ -66,8 +37,8 @@
      (frame 1)
      (rect-w 300)
      (rect-h 200)
-     (rect-x (- center-x (/ 300 2)))
-     (rect-y (- center-y (/ 200 2)))
+     (rect-x (- *center-x* (/ 300 2)))
+     (rect-y (- *center-y* (/ 200 2)))
      (cx 0)
      (cy 0)
      (cr 10)

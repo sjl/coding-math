@@ -12,3 +12,14 @@
     `(let* (,@(mapcar #'list temps exprs)
             (,(car stores) (* ,n ,access-expr)))
        ,store-expr)))
+
+(defun a (alist key) ; lol
+  (cdr (assoc key alist)))
+
+(defmacro in-context (&body body)
+  `(prog1
+    (push-matrix)
+    (progn ,@body)
+    (pop-matrix)))
+
+

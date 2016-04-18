@@ -22,6 +22,7 @@
                 :serial t
                 :components ((:file "utils")
                              (:file "math")
+                             (:file "fps")
                              (:file "vectors")
                              (:file "particles")
                              (:file "main")
