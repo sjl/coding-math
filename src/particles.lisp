@@ -1,4 +1,4 @@
-(in-package #:coding-math)
+(in-package #:coding-math.particles)
 
 (defclass particle ()
   ((pos :type 'vec

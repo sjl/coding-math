@@ -19,9 +19,12 @@
   :components ((:file "quickutils") ; quickutils package ordering crap
                (:file "package")
                (:module "src"
+                :serial t
                 :components ((:file "utils")
                              (:file "math")
                              (:file "vectors")
                              (:file "particles")
-                             (:file "main")))))
+                             (:file "main")
+                             (:file "ballistics")
+                             ))))
 

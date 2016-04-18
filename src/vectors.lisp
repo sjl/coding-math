@@ -1,4 +1,4 @@
-(in-package #:coding-math)
+(in-package #:coding-math.vectors)
 
 (defclass vec ()
   ((x :type 'real :initarg :x :accessor vec-x)
@@ -14,6 +14,9 @@
           (vec-angle v) angle)
     v))
 
+(defun make-vec-ma (magnitude angle)
+  (make-vec-md magnitude angle))
+
 
 (defun vec-magnitude (vec)
   (with-slots (x y) vec
@@ -23,6 +26,9 @@
 (defun vec-angle (vec)
   (with-slots (x y) vec
     (atan y x)))
+
+(defun vec-direction (vec)
+  (vec-angle vec))
 
 
 (defun (setf vec-angle) (angle vec)

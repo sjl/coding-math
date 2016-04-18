@@ -1,4 +1,4 @@
-(in-package #:coding-math)
+(in-package #:coding-math.math)
 
 ;; Constants
 (defconstant tau (* pi 2))
@@ -14,7 +14,7 @@
 
 
 ;; Number range mapping
-(defun normalize (min max val)
+(defun norm (min max val)
   (/ (- val min)
      (- max min)))
 
@@ -41,7 +41,7 @@
 (defun map-range (source-from source-to dest-from dest-to source-val)
   "Map `source-val` from the source range to the destination range."
   (lerp dest-from dest-to
-        (normalize source-from source-to source-val)))
+        (norm source-from source-to source-val)))
 
 (defun clamp (min max n)
   (cond

@@ -1,8 +1,8 @@
 (in-package #:coding-math)
 
-(declaim (optimize (speed 3)
-                   (safety 2)
-                   (debug 0)))
+(declaim (optimize (speed 0)
+                   (safety 3)
+                   (debug 3)))
 
 ;;;; Config
 (defparameter *width* 600)
@@ -142,4 +142,4 @@
 
 
 ;;;; Run
-(defparameter *demo* (make-instance 'cm))
+; (defparameter *demo* (make-instance 'cm))
