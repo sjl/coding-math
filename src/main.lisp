@@ -11,6 +11,7 @@
 (defparameter *center-x* (/ *width* 2))
 (defparameter *center-y* (/ *height* 2))
 
+
 ;;;; Sketch
 (defun particle-oob-p (particle)
   (let ((r (particle-radius particle)))
@@ -35,24 +36,15 @@
     ((mx 0)
      (my 0)
      (frame 1)
-     (rect-w 300)
-     (rect-h 200)
-     (rect-x (- *center-x* (/ 300 2)))
-     (rect-y (- *center-y* (/ 200 2)))
-     (cx 0)
-     (cy 0)
-     (cr 10)
-     (bounce -0.7))
+     (p nil))
   (background (gray 1))
   (incf frame)
   ;;
-  (with-pen (make-pen :stroke (gray 0.3) :fill (gray 0.8))
-    (rect (- rect-x cr)
-          (- rect-y cr)
-          (+ rect-w cr cr)
-          (+ rect-h cr cr)))
-  (with-pen (make-pen :stroke (gray 0) :fill (gray 0.5))
-    (circle cx cy cr))
+  (when p
+    (particle-update! p)
+    (particle-wrap! p *width* *height*)
+    (with-pen (make-pen :stroke (gray 0.3) :fill (gray 0.8))
+      (draw-particle p)))
   ;;
   (when (zerop (mod frame 20))
     (calc-fps 20))
@@ -66,12 +58,6 @@
     (setf mx x)
     (setf my y)
     ;;
-    (setf cx (clamp rect-x
-                    (+ rect-x rect-w)
-                    x))
-    (setf cy (clamp rect-y
-                    (+ rect-y rect-h)
-                    y))
     ;;
     ))
 
@@ -90,16 +76,18 @@
 
 (defun keydown (instance scancode)
   (scancode-case scancode
-                 ))
+    (:scancode-space
+     (setf (slot-value instance 'p)
+           (make-particle *center-x* *center-y*
+                          :speed 4
+                          :radius 10
+                          :friction 0.008
+                          :direction (random tau))))))
 
 (defun keyup (instance scancode)
   (scancode-case scancode
     (:scancode-space
-     (setf (vec-magnitude (particle-vel (slot-value instance 'particle)))
-           (random-range 4.0 6.0)
-           (vec-angle (particle-vel (slot-value instance 'particle)))
-           (random tau)
-           )
+     nil
      )
     ))
 

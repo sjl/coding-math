@@ -1,7 +1,7 @@
 (in-package #:coding-math.math)
 
 ;; Constants
-(defconstant tau (* pi 2))
+(defparameter tau (* pi 2))
 
 
 ;; Random

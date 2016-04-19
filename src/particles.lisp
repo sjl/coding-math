@@ -14,19 +14,32 @@
            :initarg :rad
            :initform 1
            :accessor particle-radius)
+   (friction :type 'real
+             :initarg :friction
+             :initform 0.0
+             :accessor particle-friction)
    (mass :type 'real
          :initarg :mass
          :initform 1.0
          :accessor particle-mass)))
 
 
-(defun make-particle (x y &key (speed 0) (direction 0) (mass 1.0) (radius 1) (gravity 0.0))
+(defun make-particle
+    (x y
+     &key
+     (speed 0)
+     (direction 0)
+     (mass 1.0)
+     (radius 1)
+     (gravity 0.0)
+     (friction 0.0))
   (make-instance 'particle
-    :pos (make-vec x y)
-    :vel (make-vec-md speed direction)
-    :grv (make-vec-md gravity (/ tau 4))
-    :mass mass
-    :rad radius))
+                 :pos (make-vec x y)
+                 :vel (make-vec-md speed direction)
+                 :grv (make-vec-md gravity (/ tau 4))
+                 :friction friction
+                 :mass mass
+                 :rad radius))
 
 
 (defun particle-x (particle)
@@ -55,10 +68,14 @@
 
 
 (defun particle-update! (particle)
-  (vec-add! (particle-pos particle)
-            (particle-vel particle))
-  (vec-add! (particle-vel particle)
-            (particle-grv particle)))
+  (with-accessors ((pos particle-pos)
+                   (vel particle-vel)
+                   (grv particle-grv)
+                   (friction particle-friction))
+      particle
+    (vec-add! pos vel)
+    (vec-add! vel grv)
+    (vec-mul! vel (- 1 friction))))
 
 
 (defun particle-accelerate! (particle acceleration)

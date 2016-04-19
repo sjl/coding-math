@@ -55,6 +55,7 @@
 (defpackage #:coding-math.particles
   (:use
    #:cl
+   #:coding-math.math
    #:coding-math.vectors
    #:coding-math.quickutils
    #:coding-math.utils)
@@ -65,6 +66,7 @@
    #:particle-grv
    #:particle-radius
    #:particle-mass
+   #:particle-friction
    #:make-particle
    #:particle-x
    #:particle-y
