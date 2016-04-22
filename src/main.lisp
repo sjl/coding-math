@@ -40,11 +40,11 @@
   (background (gray 1))
   (incf frame)
   ;;
-  (when p
-    (particle-update! p)
-    (particle-wrap! p *width* *height*)
-    (with-pen (make-pen :stroke (gray 0.3) :fill (gray 0.8))
-      (draw-particle p)))
+  (with-pen (make-pen :stroke (gray 0.3)
+                      :fill (if (> (distance mx my *center-x* *center-y*) 100)
+                              (gray 1)
+                              (gray 0.5)))
+    (circle *center-x* *center-y* 100))
   ;;
   (when (zerop (mod frame 20))
     (calc-fps 20))

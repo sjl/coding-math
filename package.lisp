@@ -7,7 +7,8 @@
    #:a
    #:in-context
    #:mulf
-   #:dividesp))
+   #:dividesp
+   #:square))
 
 (defpackage #:coding-math.math
   (:use
@@ -16,6 +17,7 @@
    #:coding-math.utils)
   (:export
    #:tau
+   #:distance
    #:random-range
    #:random-around
    #:norm
@@ -30,6 +32,7 @@
 (defpackage #:coding-math.vectors
   (:use
    #:cl
+   #:coding-math.math
    #:coding-math.quickutils
    #:coding-math.utils)
   (:export

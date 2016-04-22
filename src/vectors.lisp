@@ -84,3 +84,6 @@
   (format nil "[~A ~A]" (vec-x v) (vec-y v)))
 
 
+(defun vec-distance-between (v0 v1)
+  (distance (vec-x v0) (vec-y v0)
+            (vec-x v1) (vec-y v1)))

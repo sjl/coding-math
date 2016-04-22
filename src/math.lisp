@@ -3,6 +3,11 @@
 ;; Constants
 (defparameter tau (* pi 2))
 
+;; Geometry
+(defun distance (x0 y0 x1 y1)
+  (sqrt (+ (square (- x0 x1))
+           (square (- y0 y1)))))
+
 
 ;; Random
 (defun random-range (min max)

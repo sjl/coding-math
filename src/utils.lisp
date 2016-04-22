@@ -4,6 +4,10 @@
   "Return whether `n` is evenly divisible by `divisor`."
   (zerop (mod n divisor)))
 
+(defun square (n)
+  "Return the square of `n`."
+  (* n n))
+
 
 (defmacro mulf (place n &environment env)
   "Multiply `place` by `n` in-place."
@@ -12,6 +16,7 @@
     `(let* (,@(mapcar #'list temps exprs)
             (,(car stores) (* ,n ,access-expr)))
        ,store-expr)))
+
 
 (defun a (alist key) ; lol
   (cdr (assoc key alist)))
