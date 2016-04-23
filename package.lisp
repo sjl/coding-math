@@ -4,8 +4,9 @@
    #:sketch
    #:coding-math.quickutils)
   (:export
-   #:a
    #:in-context
+   #:make-sketch
+   #:scancode-case
    #:mulf
    #:dividesp
    #:square))
@@ -70,6 +71,8 @@
    #:particle-radius
    #:particle-mass
    #:particle-friction
+   #:particle-speed
+   #:particle-direction
    #:make-particle
    #:particle-x
    #:particle-y
@@ -106,6 +109,7 @@
    #:cl
    #:sketch
    #:coding-math.quickutils
+   #:coding-math.particles
    #:coding-math.utils
    #:coding-math.math
    #:coding-math.fps))

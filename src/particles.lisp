@@ -48,6 +48,12 @@
 (defun particle-y (particle)
   (vec-y (particle-pos particle)))
 
+(defun particle-speed (particle)
+  (vec-magnitude (particle-vel particle)))
+
+(defun particle-direction (particle)
+  (vec-direction (particle-vel particle)))
+
 (defun particle-wrap! (particle width height)
   (with-slots (radius) particle
     (setf (particle-x particle)
@@ -65,6 +71,12 @@
 
 (defun (setf particle-y) (new-value particle)
   (setf (vec-y (particle-pos particle)) new-value))
+
+(defun (setf particle-speed) (new-value particle)
+  (setf (vec-magnitude (particle-vel particle)) new-value))
+
+(defun (setf particle-direction) (new-value particle)
+  (setf (vec-direction (particle-vel particle)) new-value))
 
 
 (defun particle-update! (particle)

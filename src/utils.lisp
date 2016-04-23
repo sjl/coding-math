@@ -18,9 +18,6 @@
        ,store-expr)))
 
 
-(defun a (alist key) ; lol
-  (cdr (assoc key alist)))
-
 (defmacro in-context (&body body)
   `(prog1
     (push-matrix)
@@ -28,3 +25,22 @@
     (pop-matrix)))
 
 
+(defmacro make-sketch (class &rest bindings)
+  `(let*
+    (,@(loop :for (k v) :in bindings
+             :collect (list k v)))
+    (make-instance
+      ,class
+      ,@(loop :for (k) :in bindings
+              :append (list (alexandria:make-keyword k) k)))))
+
+
+(defmacro scancode-case (scancode-form &rest pairs)
+  (with-gensyms (scancode)
+    `(let ((,scancode ,scancode-form))
+      (cond
+        ,@(mapcar (lambda (pair)
+                    (destructuring-bind (key-scancode &rest body) pair
+                      `((sdl2:scancode= ,scancode ,key-scancode)
+                        ,@body)))
+           pairs)))))

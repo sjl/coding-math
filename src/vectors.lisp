@@ -38,6 +38,9 @@
       (setf y (* magnitude (sin angle)))))
   angle)
 
+(defun (setf vec-direction) (angle vec)
+  (setf (vec-angle vec) angle))
+
 (defun (setf vec-magnitude) (magnitude vec)
   (let ((angle (vec-angle vec)))
     (with-slots (x y) vec

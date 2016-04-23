@@ -63,17 +63,6 @@
 
 
 ;;;; Keyboard
-(defmacro scancode-case (scancode-form &rest pairs)
-  (let ((scancode (gensym "scancode")))
-    `(let ((,scancode ,scancode-form))
-      (cond
-        ,@(mapcar (lambda (pair)
-                    (destructuring-bind (key-scancode &rest body) pair
-                      `((sdl2:scancode= ,scancode ,key-scancode)
-                        ,@body)))
-                  pairs)))))
-
-
 (defun keydown (instance scancode)
   (scancode-case scancode
     (:scancode-space
@@ -87,9 +76,7 @@
 (defun keyup (instance scancode)
   (scancode-case scancode
     (:scancode-space
-     nil
-     )
-    ))
+     nil)))
 
 
 (defmethod kit.sdl2:keyboard-event ((instance cm) state timestamp repeatp keysym)
