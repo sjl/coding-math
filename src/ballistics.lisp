@@ -132,4 +132,4 @@
 
 
 ;;;; Run
-(defparameter *demo* (make-game))
+; (defparameter *demo* (make-game))

@@ -1,8 +1,8 @@
 (in-package #:coding-math)
 
-(declaim (optimize (speed 0)
-                   (safety 3)
-                   (debug 3)))
+(declaim (optimize (speed 1)
+                   (safety 1)
+                   (debug 1)))
 
 ;;;; Config
 (defparameter *width* 600)
@@ -15,15 +15,25 @@
 ;;;; Sketch
 (defun particle-oob-p (particle)
   (let ((r (particle-radius particle)))
-    (or (outside-p (- 0 r)
-                   (+ *width* r)
-                   (particle-x particle))
-        (outside-p (- 0 r)
-                   (+ *height* r)
-                   (particle-y particle)))))
+    (or (outsidep (- 0 r)
+                  (+ *width* r)
+                  (particle-x particle))
+        (outsidep (- 0 r)
+                  (+ *height* r)
+                  (particle-y particle)))))
 
 
-(declaim (inline draw-particle))
+(defun draw-rect (r)
+  (rect (getf r :x)
+        (getf r :y)
+        (getf r :width)
+        (getf r :height)))
+
+(defun draw-circle (c)
+  (circle (getf c :x)
+          (getf c :y)
+          (getf c :radius)))
+
 (defun draw-particle (particle)
   (circle (particle-x particle)
           (particle-y particle)
@@ -33,30 +43,46 @@
 (defsketch cm (:width *width*
                :height *height*
                :debug :scancode-d)
-    ((mx 0)
-     (my 0)
-     (frame 1)
-     (p nil))
+    ((mouse)
+     (frame)
+     (r)
+     (mr)
+     )
   (background (gray 1))
   (incf frame)
   ;;
-  (with-pen (make-pen :stroke (gray 0.3)
-                      :fill (if (> (distance mx my *center-x* *center-y*) 100)
-                              (gray 1)
-                              (gray 0.5)))
-    (circle *center-x* *center-y* 100))
+
+  (setf (getf mr :x) (getf mouse :x))
+  (setf (getf mr :y) (getf mouse :y))
+
+  (with-pen (make-pen :stroke (gray 0.5)
+                      :fill (cond
+                              ((rects-collide-p r mr)
+                               (rgb 0 0 0.7 0.5))
+                              (t (gray 0.9))))
+    (draw-rect r)
+    (draw-rect mr))
+
   ;;
   (when (zerop (mod frame 20))
     (calc-fps 20))
   (draw-fps))
 
+(defun make-cm ()
+  (make-sketch 'cm
+    (mouse (list :x 0 :y 0))
+    (frame 1)
+    (r (list :x 20 :y 50 :width (- *width* 40) :height 30))
+    (mr (list :x 300 :y 300 :width 90 :height 90))
+    ))
+
 
 ;;;; Mouse
 (defmethod kit.sdl2:mousemotion-event ((window cm) ts b x y xrel yrel)
   (declare (ignore ts b xrel yrel))
-  (with-slots (mx my rect-x rect-y rect-w rect-h cx cy cr) window
-    (setf mx x)
-    (setf my y)
+  (with-slots (mouse) window
+    (setf (getf mouse :x) x)
+    (setf (getf mouse :y) y)
     ;;
     ;;
     ))
@@ -74,6 +100,7 @@
                           :direction (random tau))))))
 
 (defun keyup (instance scancode)
+  (declare (ignore instance))
   (scancode-case scancode
     (:scancode-space
      nil)))
@@ -88,4 +115,4 @@
 
 
 ;;;; Run
-; (defparameter *demo* (make-instance 'cm))
+; (defparameter *demo* (make-cm))

@@ -44,3 +44,10 @@
                       `((sdl2:scancode= ,scancode ,key-scancode)
                         ,@body)))
            pairs)))))
+
+(defmacro with-vals (bindings value-form &body body)
+  (with-gensyms (val)
+    `(let* ((,val ,value-form)
+            ,@(loop :for (s accessor) :in bindings
+                    :collect `(,s (,accessor ,val))))
+      ,@body)))

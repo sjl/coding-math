@@ -115,3 +115,13 @@
           (vec-angle gravity)
           (particle-angle-to particle attractor-particle))
     (particle-accelerate! particle gravity)))
+
+
+(defmethod hitbox-x ((p particle))
+  (particle-x p))
+
+(defmethod hitbox-y ((p particle))
+  (particle-y p))
+
+(defmethod hitbox-radius ((p particle))
+  (particle-radius p))
