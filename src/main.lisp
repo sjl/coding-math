@@ -44,37 +44,32 @@
                :height *height*
                :debug :scancode-d)
     ((mouse)
-     (frame)
      (r)
      (mr)
      )
-  (background (gray 1))
-  (incf frame)
-  ;;
+  (with-fps
+    (background (gray 1))
+    ;;
 
-  (setf (getf mr :x) (getf mouse :x))
-  (setf (getf mr :y) (getf mouse :y))
+    (setf (getf mr :x) (getf mouse :x))
+    (setf (getf mr :y) (getf mouse :y))
 
-  (with-pen (make-pen :stroke (gray 0.5)
-                      :fill (cond
-                              ((rects-collide-p r mr)
-                               (rgb 0 0 0.7 0.5))
-                              (t (gray 0.9))))
-    (draw-rect r)
-    (draw-rect mr))
-
-  ;;
-  (when (zerop (mod frame 20))
-    (calc-fps 20))
-  (draw-fps))
+    (with-pen (make-pen :stroke (gray 0.5)
+                        :fill (cond
+                                ((rects-collide-p r mr)
+                                 (rgb 0 0 0.7 0.5))
+                                (t (gray 0.9))))
+      (draw-rect r)
+      (draw-rect mr))
+    ;;
+    ))
 
 (defun make-cm ()
   (make-sketch 'cm
     (mouse (list :x 0 :y 0))
-    (frame 1)
     (r (list :x 20 :y 50 :width (- *width* 40) :height 30))
-    (mr (list :x 300 :y 300 :width 90 :height 90))
-    ))
+    (mr (list :x 300 :y 300 :width 90 :height 90))))
+
 
 
 ;;;; Mouse

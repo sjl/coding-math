@@ -103,7 +103,7 @@
     #:coding-math.quickutils
     #:coding-math.utils)
   (:export
-    #:calc-fps
+    #:with-fps
     #:draw-fps))
 
 (defpackage #:coding-math
