@@ -12,7 +12,7 @@
 (defun draw-gun (gun)
   (in-context
     (translate (getf gun 'x) (getf gun 'y))
-    (with-pen (make-pen :stroke (gray 0.0))
+    (with-pen (make-pen :stroke (gray 0.0) :fill (gray 0.0))
       (circle 0 0 25)
       (rotate (degrees (getf gun 'angle)))
       (rect 0 -8 40 16)
@@ -21,6 +21,14 @@
 (defun draw-ball (ball)
   (with-pen (make-pen :stroke (gray 0.1) :fill (gray 0.6))
      (circle (particle-x ball) (particle-y ball) (particle-radius ball))))
+
+(defun draw-force (force)
+  (with-pen (make-pen :fill (gray 0.6) :weight 2)
+    (circle 20 (- *height* 50) 15))
+  (with-pen (make-pen :fill (rgb 1.000 0.478 0.749))
+    (circle 20
+            (- *height* 50)
+            (map-range -1.0 1.0 0 15 force))))
 
 
 ;;;; Game
@@ -33,53 +41,55 @@
 
 (defun shoot (game)
   (force-output)
-  (with-slots (gun cannonball can-shoot-p firedp) game
+  (with-slots (gun cannonball firedp raw-force) game
     (let ((angle (getf gun 'angle)))
       (setf
-        can-shoot-p nil
         firedp t
         (particle-x cannonball) (+ (getf gun 'x) (* 40 (cos angle)))
         (particle-y cannonball) (+ (getf gun 'y) (* 40 (sin angle)))
-        (particle-speed cannonball) 10
+        (particle-speed cannonball) (map-range -1.0 1.0 2 20.0 raw-force)
         (particle-direction cannonball) angle))))
 
 (defun update-ball (game)
-  (with-slots (cannonball firedp can-shoot-p) game
+  (with-slots (cannonball firedp) game
     (particle-update! cannonball)
     (when (> (- (particle-y cannonball)
                 (particle-radius cannonball))
              *height*)
-      (setf can-shoot-p t
-            firedp nil))))
+      (setf firedp nil))))
 
 (defsketch game (:width *width*
                  :height *height*
                  :debug :scancode-d)
-    ((frame)
-     (aiming)
+    ((aiming)
      (gun)
      (cannonball)
      (can-shoot-p)
      (firedp)
+     (force-speed 0.05)
+     (force-angle 0.0)
+     (raw-force)
      )
-  (background (gray 1))
-  (incf frame)
-  ;;
-  (draw-gun gun)
-  (draw-ball cannonball)
-  (when firedp
-    (update-ball sketch::sketch-window))
-  ;;
-  (when (zerop (mod frame 20))
-    (calc-fps 20))
-  (draw-fps))
+  (with-fps
+    (background (gray 1))
+    ;;
+    (when (not firedp)
+      (incf force-angle force-speed))
+    (setf raw-force (sin force-angle))
+
+    (draw-gun gun)
+    (draw-ball cannonball)
+    (draw-force raw-force)
+    (when firedp
+      (update-ball sketch::sketch-window))
+
+    ;;
+    ))
 
 
 (defun make-game ()
   (make-sketch 'game
-    (frame 1)
     (aiming nil)
-    (can-shoot-p t)
     (firedp nil)
     (gun `(x 40
            y ,*height*
@@ -118,7 +128,7 @@
 (defun keyup (game scancode)
   (scancode-case scancode
     (:scancode-space
-     (when (can-shoot-p game)
+     (when (not (firedp game))
        (shoot game)))))
 
 
