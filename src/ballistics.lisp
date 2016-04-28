@@ -9,23 +9,27 @@
 
 
 ;;;; Drawing
+(defparameter *gun-pen* (make-pen :stroke (gray 0.0) :fill (gray 0.0)))
+(defparameter *ball-pen* (make-pen :stroke (gray 0.1) :fill (gray 0.6)))
+(defparameter *force-bg-pen* (make-pen :fill (gray 0.6)))
+(defparameter *force-fg-pen* (make-pen :fill (rgb 1.000 0.478 0.749)))
+
 (defun draw-gun (gun)
   (in-context
     (translate (getf gun 'x) (getf gun 'y))
-    (with-pen (make-pen :stroke (gray 0.0) :fill (gray 0.0))
+    (with-pen *gun-pen*
       (circle 0 0 25)
       (rotate (degrees (getf gun 'angle)))
-      (rect 0 -8 40 16)
-      )))
+      (rect 0 -8 40 16))))
 
 (defun draw-ball (ball)
-  (with-pen (make-pen :stroke (gray 0.1) :fill (gray 0.6))
+  (with-pen *ball-pen*
      (circle (particle-x ball) (particle-y ball) (particle-radius ball))))
 
 (defun draw-force (force)
-  (with-pen (make-pen :fill (gray 0.6) :weight 2)
+  (with-pen *force-bg-pen*
     (circle 20 (- *height* 50) 15))
-  (with-pen (make-pen :fill (rgb 1.000 0.478 0.749))
+  (with-pen *force-fg-pen*
     (circle 20
             (- *height* 50)
             (map-range -1.0 1.0 0 15 force))))
@@ -74,11 +78,11 @@
     (background (gray 1))
     ;;
     (when (not firedp)
-      (incf force-angle force-speed))
-    (setf raw-force (sin force-angle))
+      (incf force-angle force-speed)
+      (setf raw-force (sin force-angle)))
 
-    (draw-gun gun)
     (draw-ball cannonball)
+    (draw-gun gun)
     (draw-force raw-force)
     (when firedp
       (update-ball sketch::sketch-window))
