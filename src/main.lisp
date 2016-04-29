@@ -44,31 +44,45 @@
                :height *height*
                :debug :scancode-d)
     ((mouse)
-     (r)
-     (mr)
+     (spring-point)
+     (weight)
+     (k)
      )
   (with-fps
     (background (gray 1))
     ;;
 
-    (setf (getf mr :x) (getf mouse :x))
-    (setf (getf mr :y) (getf mouse :y))
+    (setf spring-point (make-vec (getf mouse :x) (getf mouse :y)))
 
-    (with-pen (make-pen :stroke (gray 0.5)
-                        :fill (cond
-                                ((rects-collide-p r mr)
-                                 (rgb 0 0 0.7 0.5))
-                                (t (gray 0.9))))
-      (draw-rect r)
-      (draw-rect mr))
+    (when weight
+      (let* ((distance (vec-sub spring-point
+                                (particle-pos weight)))
+             (force (vec-mul distance k)))
+        (vec-add! (particle-vel weight) force))
+
+      (particle-update! weight)
+      (with-pen (make-pen :fill (gray 0 0.8))
+        (draw-particle weight))
+
+      (let ((sx (vec-x spring-point))
+            (sy (vec-y spring-point))
+            (wx (particle-x weight))
+            (wy (particle-y weight)))
+        (with-pen (make-pen :fill (gray 0))
+          (circle sx sy 5))
+        (unless (and (= sx wx)
+                     (= sy wy))
+          (with-pen (make-pen :stroke (gray 0))
+            (line sx sy wx wy)))))
+
     ;;
     ))
 
 (defun make-cm ()
   (make-sketch 'cm
     (mouse (list :x 0 :y 0))
-    (r (list :x 20 :y 50 :width (- *width* 40) :height 30))
-    (mr (list :x 300 :y 300 :width 90 :height 90))))
+    (spring-point (make-vec *center-x* *center-y*))
+    ))
 
 
 
@@ -87,12 +101,14 @@
 (defun keydown (instance scancode)
   (scancode-case scancode
     (:scancode-space
-     (setf (slot-value instance 'p)
-           (make-particle *center-x* *center-y*
-                          :speed 4
-                          :radius 10
-                          :friction 0.008
-                          :direction (random tau))))))
+     (setf (slot-value instance 'k)
+           (random 0.5)
+           (slot-value instance 'weight)
+           (make-particle (random *width*) (random *height*)
+                          :speed (random-range 20.0 50.0)
+                          :radius 15
+                          :direction (random tau)
+                          :friction (random 0.9))))))
 
 (defun keyup (instance scancode)
   (declare (ignore instance))
