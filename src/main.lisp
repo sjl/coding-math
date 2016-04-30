@@ -1,8 +1,8 @@
 (in-package #:coding-math)
 
-(declaim (optimize (speed 1)
+(declaim (optimize (speed 3)
                    (safety 1)
-                   (debug 1)))
+                   (debug 0)))
 
 ;;;; Config
 (defparameter *width* 600)

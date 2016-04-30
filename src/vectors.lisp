@@ -1,12 +1,15 @@
 (in-package #:coding-math.vectors)
 
-(defclass vec ()
-  ((x :type 'real :initarg :x :accessor vec-x)
-   (y :type 'real :initarg :y :accessor vec-y)))
 
+(declaim (inline vec-x vec-y))
 
-(defun make-vec (&optional (x 0) (y 0))
-  (make-instance 'vec :x x :y y))
+(defstruct (vec
+             (:constructor make-vec
+              (&optional (x 0) (y 0)))
+             (:type vector))
+  (x 0 :type real)
+  (y 0 :type real))
+
 
 (defun make-vec-md (magnitude angle)
   (let ((v (make-vec 0 0)))
@@ -18,13 +21,20 @@
   (make-vec-md magnitude angle))
 
 
+(defmacro with-vec (bindings vec &body body)
+  (once-only (vec)
+    `(let ((,(first bindings) (vec-x ,vec))
+           (,(second bindings) (vec-y ,vec)))
+       ,@body)))
+
+
 (defun vec-magnitude (vec)
-  (with-slots (x y) vec
+  (with-vec (x y) vec
     (sqrt (+ (* x x)
              (* y y)))))
 
 (defun vec-angle (vec)
-  (with-slots (x y) vec
+  (with-vec (x y) vec
     (atan y x)))
 
 (defun vec-direction (vec)
@@ -33,9 +43,8 @@
 
 (defun (setf vec-angle) (angle vec)
   (let ((magnitude (vec-magnitude vec)))
-    (with-slots (x y) vec
-      (setf x (* magnitude (cos angle)))
-      (setf y (* magnitude (sin angle)))))
+    (setf (vec-x vec) (* magnitude (cos angle)))
+    (setf (vec-y vec) (* magnitude (sin angle))))
   angle)
 
 (defun (setf vec-direction) (angle vec)
@@ -43,9 +52,8 @@
 
 (defun (setf vec-magnitude) (magnitude vec)
   (let ((angle (vec-angle vec)))
-    (with-slots (x y) vec
-      (setf x (* magnitude (cos angle)))
-      (setf y (* magnitude (sin angle)))))
+    (setf (vec-x vec) (* magnitude (cos angle)))
+    (setf (vec-y vec) (* magnitude (sin angle))))
   magnitude)
 
 

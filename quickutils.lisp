@@ -2,7 +2,7 @@
 ;;;; See http://quickutil.org for details.
 
 ;;;; To regenerate:
-;;;; (qtlc:save-utils-as "quickutils.lisp" :utilities '(:DEFINE-CONSTANT :SWITCH :WHILE :ENSURE-BOOLEAN :WITH-GENSYMS) :ensure-package T :package "CODING-MATH.QUICKUTILS")
+;;;; (qtlc:save-utils-as "quickutils.lisp" :utilities '(:DEFINE-CONSTANT :SWITCH :WHILE :ENSURE-BOOLEAN :WITH-GENSYMS :ONCE-ONLY) :ensure-package T :package "CODING-MATH.QUICKUTILS")
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unless (find-package "CODING-MATH.QUICKUTILS")
@@ -15,7 +15,8 @@
 (when (boundp '*utilities*)
   (setf *utilities* (union *utilities* '(:DEFINE-CONSTANT :STRING-DESIGNATOR
                                          :WITH-GENSYMS :EXTRACT-FUNCTION-NAME
-                                         :SWITCH :UNTIL :WHILE :ENSURE-BOOLEAN))))
+                                         :SWITCH :UNTIL :WHILE :ENSURE-BOOLEAN
+                                         :MAKE-GENSYM-LIST :ONCE-ONLY))))
 
   (defun %reevaluate-constant (name value test)
     (if (not (boundp name))
@@ -166,7 +167,54 @@ returns the values of `default` if no keys match."
     (and x t))
   
 (eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun make-gensym-list (length &optional (x "G"))
+    "Returns a list of `length` gensyms, each generated as if with a call to `make-gensym`,
+using the second (optional, defaulting to `\"G\"`) argument."
+    (let ((g (if (typep x '(integer 0)) x (string x))))
+      (loop repeat length
+            collect (gensym g))))
+  )                                        ; eval-when
+
+  (defmacro once-only (specs &body forms)
+    "Evaluates `forms` with symbols specified in `specs` rebound to temporary
+variables, ensuring that each initform is evaluated only once.
+
+Each of `specs` must either be a symbol naming the variable to be rebound, or of
+the form:
+
+    (symbol initform)
+
+Bare symbols in `specs` are equivalent to
+
+    (symbol symbol)
+
+Example:
+
+    (defmacro cons1 (x) (once-only (x) `(cons ,x ,x)))
+      (let ((y 0)) (cons1 (incf y))) => (1 . 1)"
+    (let ((gensyms (make-gensym-list (length specs) "ONCE-ONLY"))
+          (names-and-forms (mapcar (lambda (spec)
+                                     (etypecase spec
+                                       (list
+                                        (destructuring-bind (name form) spec
+                                          (cons name form)))
+                                       (symbol
+                                        (cons spec spec))))
+                                   specs)))
+      ;; bind in user-macro
+      `(let ,(mapcar (lambda (g n) (list g `(gensym ,(string (car n)))))
+              gensyms names-and-forms)
+         ;; bind in final expansion
+         `(let (,,@(mapcar (lambda (g n)
+                             ``(,,g ,,(cdr n)))
+                           gensyms names-and-forms))
+            ;; bind in user-macro
+            ,(let ,(mapcar (lambda (n g) (list (car n) g))
+                    names-and-forms gensyms)
+               ,@forms)))))
+  
+(eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(define-constant switch eswitch cswitch while ensure-boolean
-            with-gensyms with-unique-names)))
+            with-gensyms with-unique-names once-only)))
 
 ;;;; END OF quickutils.lisp ;;;;

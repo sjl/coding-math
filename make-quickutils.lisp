@@ -7,5 +7,6 @@
                :while
                :ensure-boolean
                :with-gensyms
+               :once-only
                )
   :package "CODING-MATH.QUICKUTILS")

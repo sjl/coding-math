@@ -67,7 +67,8 @@
     #:vec-sub!
     #:vec-mul!
     #:vec-div!
-    #:vec-to-string))
+    #:vec-to-string
+    #:with-vec))
 
 (defpackage #:coding-math.particles
   (:use
