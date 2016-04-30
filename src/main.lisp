@@ -40,40 +40,72 @@
           (particle-radius particle)))
 
 
+(defun bounce-particle (particle)
+  (with-accessors ((x particle-x)
+                   (y particle-y)
+                   (r particle-radius))
+      particle
+    (when (outsidep r (- *width* r) x)
+      (setf x (clamp r (- *width* r) x))
+      (mulf (vec-x (particle-vel particle)) -0.9))
+    (when (outsidep r (- *height* r) y)
+      (setf y (clamp r (- *height* r) y))
+      (mulf (vec-y (particle-vel particle)) -0.9))))
+
+(defun spring (pa pb separation k)
+  (let ((distance (vec-sub (particle-pos pa)
+                           (particle-pos pb))))
+    (decf (vec-magnitude distance) separation)
+    (let ((force (vec-mul distance k)))
+      (vec-add! (particle-vel pb) force)
+      (vec-sub! (particle-vel pa) force))))
+
+
 (defsketch cm (:width *width*
                :height *height*
                :debug :scancode-d)
     ((mouse)
-     (spring-point)
-     (weight)
      (k)
+     (separation)
+     (particle-a)
+     (particle-b)
+     (particle-c)
      )
   (with-fps
     (background (gray 1))
     ;;
 
-    (setf spring-point (make-vec (getf mouse :x) (getf mouse :y)))
+    (when particle-a
+      (spring particle-a particle-b separation k)
+      (spring particle-b particle-c separation k)
+      (spring particle-c particle-a separation k)
 
-    (when weight
-      (let* ((distance (vec-sub spring-point
-                                (particle-pos weight)))
-             (force (vec-mul distance k)))
-        (vec-add! (particle-vel weight) force))
+      (bounce-particle particle-a)
+      (bounce-particle particle-b)
+      (bounce-particle particle-c)
 
-      (particle-update! weight)
+      (particle-update! particle-a)
+      (particle-update! particle-b)
+      (particle-update! particle-c)
+
       (with-pen (make-pen :fill (gray 0 0.8))
-        (draw-particle weight))
-
-      (let ((sx (vec-x spring-point))
-            (sy (vec-y spring-point))
-            (wx (particle-x weight))
-            (wy (particle-y weight)))
-        (with-pen (make-pen :fill (gray 0))
-          (circle sx sy 5))
-        (unless (and (= sx wx)
-                     (= sy wy))
-          (with-pen (make-pen :stroke (gray 0))
-            (line sx sy wx wy)))))
+        (draw-particle particle-a)
+        (draw-particle particle-b)
+        (draw-particle particle-c))
+      (with-pen (make-pen :stroke (gray 0))
+        (line (particle-x particle-a)
+              (particle-y particle-a)
+              (particle-x particle-b)
+              (particle-y particle-b))
+        (line (particle-x particle-b)
+              (particle-y particle-b)
+              (particle-x particle-c)
+              (particle-y particle-c))
+        (line (particle-x particle-c)
+              (particle-y particle-c)
+              (particle-x particle-a)
+              (particle-y particle-a)))
+      )
 
     ;;
     ))
@@ -81,7 +113,9 @@
 (defun make-cm ()
   (make-sketch 'cm
     (mouse (list :x 0 :y 0))
-    (spring-point (make-vec *center-x* *center-y*))
+    (spring-length 100)
+    (k 0.01)
+    (separation 100)
     ))
 
 
@@ -101,14 +135,28 @@
 (defun keydown (instance scancode)
   (scancode-case scancode
     (:scancode-space
-     (setf (slot-value instance 'k)
-           (random 0.5)
-           (slot-value instance 'weight)
+     (setf (slot-value instance 'particle-a)
            (make-particle (random *width*) (random *height*)
-                          :speed (random-range 20.0 50.0)
-                          :radius 15
-                          :direction (random tau)
-                          :friction (random 0.9))))))
+                          :speed (random-range 10.0 60.0)
+                          :radius 20
+                          :friction 0.1
+                          :gravity 0.3
+                          :direction (random tau))
+           (slot-value instance 'particle-b)
+           (make-particle (random *width*) (random *height*)
+                          :speed (random-range 10.0 60.0)
+                          :radius 20
+                          :friction 0.1
+                          :gravity 0.3
+                          :direction (random tau))
+           (slot-value instance 'particle-c)
+           (make-particle (random *width*) (random *height*)
+                          :speed (random-range 10.0 60.0)
+                          :radius 20
+                          :friction 0.1
+                          :gravity 0.3
+                          :direction (random tau))
+           ))))
 
 (defun keyup (instance scancode)
   (declare (ignore instance))
