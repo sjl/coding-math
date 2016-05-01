@@ -9,6 +9,8 @@
     #:scancode-case
     #:with-vals
     #:mulf
+    #:zap%
+    #:%
     #:dividesp
     #:square))
 
@@ -29,6 +31,7 @@
     #:clamp
     #:wrap-zero
     #:wrap-range
+    #:wrapf
     #:outsidep
     #:insidep
     #:ranges-overlap-p

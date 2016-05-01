@@ -72,6 +72,9 @@
      (mod (- val min)
           (- max min))))
 
+(defmacro wrapf (place min max)
+  `(zap% ,place #'wrap-range ,min ,max %))
+
 
 (defun insidep (from to val)
   (< (min from to) val (max from to)))

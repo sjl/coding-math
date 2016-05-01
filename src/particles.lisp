@@ -1,27 +1,15 @@
 (in-package #:coding-math.particles)
 
-(defclass particle ()
-  ((pos :type 'vec
-        :initarg :pos
-        :accessor particle-pos)
-   (vel :type 'vec
-        :initarg :vel
-        :accessor particle-vel)
-   (grv :type 'vec
-        :initarg :grv
-        :accessor particle-grv)
-   (radius :type 'integer
-           :initarg :rad
-           :initform 1
-           :accessor particle-radius)
-   (friction :type 'real
-             :initarg :friction
-             :initform 0.0
-             :accessor particle-friction)
-   (mass :type 'real
-         :initarg :mass
-         :initform 1.0
-         :accessor particle-mass)))
+(defstruct (particle
+             (:constructor make-particle%)
+             (:type vector)
+             :named)
+  (pos (make-vec) :type vec)
+  (vel (make-vec) :type vec)
+  (grv (make-vec) :type vec)
+  (radius 1 :type fixnum)
+  (friction 0.0 :type single-float)
+  (mass 1.0 :type single-float))
 
 
 (defun make-particle
@@ -33,13 +21,13 @@
      (radius 1)
      (gravity 0.0)
      (friction 0.0))
-  (make-instance 'particle
-                 :pos (make-vec x y)
-                 :vel (make-vec-md speed direction)
-                 :grv (make-vec-md gravity (/ tau 4))
-                 :friction friction
-                 :mass mass
-                 :rad radius))
+  (make-particle%
+    :pos (make-vec x y)
+    :vel (make-vec-md speed direction)
+    :grv (make-vec-md gravity (/ tau 4))
+    :friction friction
+    :mass mass
+    :radius radius))
 
 
 (defun particle-x (particle)
@@ -55,15 +43,13 @@
   (vec-direction (particle-vel particle)))
 
 (defun particle-wrap! (particle width height)
-  (with-slots (radius) particle
-    (setf (particle-x particle)
-          (wrap-range (- radius)
-                      (+ radius width)
-                      (particle-x particle))
-          (particle-y particle)
-          (wrap-range (- radius)
-                      (+ radius height)
-                      (particle-y particle)))))
+  (let ((radius (particle-radius particle)))
+    (wrapf (particle-x particle)
+           (- radius)
+           (+ radius width))
+    (wrapf (particle-y particle)
+           (- radius)
+           (+ radius height))))
 
 
 (defun (setf particle-x) (new-value particle)
@@ -79,22 +65,6 @@
   (setf (vec-direction (particle-vel particle)) new-value))
 
 
-(defun particle-update! (particle)
-  (with-accessors ((pos particle-pos)
-                   (vel particle-vel)
-                   (grv particle-grv)
-                   (friction particle-friction))
-      particle
-    (vec-add! pos vel)
-    (vec-add! vel grv)
-    (vec-mul! vel (- 1 friction))))
-
-
-(defun particle-accelerate! (particle acceleration)
-  (vec-add! (particle-vel particle)
-            acceleration))
-
-
 (defun particle-angle-to (particle other-particle)
   (let ((distance (vec-sub (particle-pos other-particle)
                            (particle-pos particle))))
@@ -106,15 +76,28 @@
                           (particle-pos other-particle))))
 
 
+(defun particle-update! (particle)
+  (with-accessors
+      ((pos particle-pos)
+       (vel particle-vel)
+       (grv particle-grv)
+       (friction particle-friction))
+      particle
+    (vec-add! pos vel)
+    (vec-add! vel grv)
+    (vec-mul! vel (- 1 friction))))
+
+(defun particle-accelerate! (particle acceleration)
+  (vec-add! (particle-vel particle)
+            acceleration))
+
 (defun particle-gravitate-to! (particle attractor-particle)
-  (let ((gravity (make-vec))
-        (distance (particle-distance-to particle attractor-particle)))
-    (setf (vec-magnitude gravity)
-          (/ (particle-mass attractor-particle)
-             (* distance distance))
-          (vec-angle gravity)
-          (particle-angle-to particle attractor-particle))
-    (particle-accelerate! particle gravity)))
+  (let ((distance (particle-distance-to particle attractor-particle)))
+    (particle-accelerate!
+      particle
+      (make-vec-md (/ (particle-mass attractor-particle)
+                      (* distance distance))
+                   (particle-angle-to particle attractor-particle)))))
 
 
 (defmethod hitbox-x ((p particle))
