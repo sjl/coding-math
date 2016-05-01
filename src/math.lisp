@@ -89,6 +89,17 @@
               (max from1 to1)))))
 
 
+;;;; Rounding
+(defun round-to-places (f places)
+  ;; This is a bit janky because it's working with floats, but it's in the
+  ;; videos so I'll write it, what the heck.
+  (let ((d (expt 10 (- places))))
+    (* d (fround f d))))
+
+(defun round-to-nearest (n divisor)
+  (* divisor (round n divisor)))
+
+
 ;;;; Collisions
 (defgeneric hitbox-x (object))
 

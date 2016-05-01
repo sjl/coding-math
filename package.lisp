@@ -34,6 +34,8 @@
     #:wrapf
     #:outsidep
     #:insidep
+    #:round-to-places
+    #:round-to-nearest
     #:ranges-overlap-p
     #:hitbox-x
     #:hitbox-y
