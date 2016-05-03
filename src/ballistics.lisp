@@ -12,7 +12,9 @@
 (defparameter *gun-pen* (make-pen :stroke (gray 0.0) :fill (gray 0.0)))
 (defparameter *ball-pen* (make-pen :stroke (gray 0.1) :fill (gray 0.6)))
 (defparameter *force-bg-pen* (make-pen :fill (gray 0.6)))
+(defparameter *target-pen* (make-pen :stroke (rgb 0.6 0 0) :weight 2 :fill (rgb 1.0 0 0)))
 (defparameter *force-fg-pen* (make-pen :fill (rgb 1.000 0.478 0.749)))
+
 
 (defun draw-gun (gun)
   (in-context
@@ -33,6 +35,13 @@
     (circle 20
             (- *height* 50)
             (map-range -1.0 1.0 0 15 force))))
+
+(defun draw-target (target)
+  (when target
+    (with-pen *target-pen*
+      (circle (getf target :x)
+              (getf target :y)
+              (getf target :radius)))))
 
 
 ;;;; Game
@@ -62,6 +71,18 @@
              *height*)
       (setf firedp nil))))
 
+(defun check-target (game)
+  (when (and (target game)
+             (circles-collide-p (cannonball game)
+                                (target game)))
+    (setf (win game) t)))
+
+(defun random-target ()
+  (list :x (random-range 200 *width*)
+        :y *height*
+        :radius (random-range 10 40)))
+
+
 (defsketch game (:width *width*
                  :height *height*
                  :debug :scancode-d)
@@ -73,6 +94,8 @@
      (force-speed 0.05)
      (force-angle 0.0)
      (raw-force)
+     (target)
+     (win)
      )
   (with-fps
     (background (gray 1))
@@ -81,11 +104,19 @@
       (incf force-angle force-speed)
       (setf raw-force (sin force-angle)))
 
+    (when (not target)
+      (setf target (random-target)))
+
     (draw-ball cannonball)
     (draw-gun gun)
     (draw-force raw-force)
+    (draw-target target)
+
     (when firedp
-      (update-ball sketch::sketch-window))
+      (update-ball sketch::sketch-window)
+      (check-target sketch::sketch-window))
+    (when win
+      (text "You win!" *center-x* *center-y*))
 
     ;;
     ))

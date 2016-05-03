@@ -1,9 +1,7 @@
 (in-package #:coding-math.particles)
 
 (defstruct (particle
-             (:constructor make-particle%)
-             (:type vector)
-             :named)
+             (:constructor make-particle%))
   (pos (make-vec) :type vec)
   (vel (make-vec) :type vec)
   (grv (make-vec) :type vec)

@@ -1,7 +1,7 @@
 (in-package #:coding-math.vectors)
 
 
-(declaim (inline vec-x vec-y))
+(declaim (inline vec-x vec-y make-vec))
 
 (defstruct (vec
              (:constructor make-vec

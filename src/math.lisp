@@ -107,6 +107,10 @@
 
 (defgeneric hitbox-radius (object))
 
+(defgeneric hitbox-width (object))
+
+(defgeneric hitbox-height (object))
+
 
 (defmethod hitbox-x ((object list))
   (getf object :x))
