@@ -100,7 +100,13 @@
     #:particle-accelerate!
     #:particle-angle-to
     #:particle-distance-to
-    #:particle-gravitate-to!))
+    #:particle-gravitate-to!
+    #:particle-gravitate-add!
+    #:particle-gravitate-remove!
+    #:particle-spring-to!
+    #:particle-spring-add!
+    #:particle-spring-remove!
+    ))
 
 (defpackage #:coding-math.fps
   (:use

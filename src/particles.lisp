@@ -7,7 +7,14 @@
   (grv (make-vec) :type vec)
   (radius 1 :type fixnum)
   (friction 0.0 :type single-float)
-  (mass 1.0 :type single-float))
+  (mass 1.0 :type single-float)
+  (springs nil :type list)
+  (gravitations nil :type list))
+
+(defstruct spring
+  (target (make-vec) :type vec)
+  (constant 0.0 :type single-float)
+  (offset 0.0 :type single-float))
 
 
 (defun make-particle
@@ -74,6 +81,44 @@
                           (particle-pos other-particle))))
 
 
+(defun particle-accelerate! (particle acceleration)
+  (vec-add! (particle-vel particle)
+            acceleration))
+
+
+(defun particle-gravitate-add! (particle target)
+  (push target (particle-gravitations particle)))
+
+(defun particle-gravitate-remove! (particle target)
+  (zap% (particle-gravitations particle)
+        #'remove target %))
+
+(defun particle-gravitate-to! (particle attractor-particle)
+  (let ((distance (particle-distance-to particle attractor-particle)))
+    (particle-accelerate!
+      particle
+      (make-vec-md (/ (particle-mass attractor-particle)
+                      (* distance distance))
+                   (particle-angle-to particle attractor-particle)))))
+
+
+(defun particle-spring-to! (particle target spring-constant &optional (offset 0))
+  (let ((distance (vec-sub target (particle-pos particle))))
+    (decf (vec-magnitude distance) offset)
+    (vec-add! (particle-vel particle)
+              (vec-mul distance spring-constant))))
+
+(defun particle-spring-add! (particle target spring-constant &optional (offset 0))
+  (push (make-spring :target target
+                     :constant (float spring-constant)
+                     :offset (float offset))
+        (particle-springs particle)))
+
+(defun particle-spring-remove! (particle target)
+  (zap% (particle-springs particle)
+        #'remove target % :key #'spring-target))
+
+
 (defun particle-update! (particle)
   (with-accessors
       ((pos particle-pos)
@@ -83,19 +128,14 @@
       particle
     (vec-add! pos vel)
     (vec-add! vel grv)
-    (vec-mul! vel (- 1 friction))))
-
-(defun particle-accelerate! (particle acceleration)
-  (vec-add! (particle-vel particle)
-            acceleration))
-
-(defun particle-gravitate-to! (particle attractor-particle)
-  (let ((distance (particle-distance-to particle attractor-particle)))
-    (particle-accelerate!
-      particle
-      (make-vec-md (/ (particle-mass attractor-particle)
-                      (* distance distance))
-                   (particle-angle-to particle attractor-particle)))))
+    (vec-mul! vel (- 1 friction))
+    (loop :for g :in (particle-gravitations particle)
+          :do (particle-gravitate-to! particle g))
+    (loop :for s :in (particle-springs particle)
+          :do (particle-spring-to! particle
+                                   (spring-target s)
+                                   (spring-constant s)
+                                   (spring-offset s)))))
 
 
 (defmethod hitbox-x ((p particle))
