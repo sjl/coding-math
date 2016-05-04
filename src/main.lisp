@@ -95,7 +95,6 @@
         )
       )
 
-
     ;;
     ))
 
@@ -107,16 +106,16 @@
 (defun reset (game)
   (setf (slot-value game 'ready) nil)
   (setf (slot-value game 'p-from)
-        (make-vec 20 (random-around *center-y* 50))
+        (make-random-vec *width* *height*)
 
         (slot-value game 'p-c1)
-        (make-vec (* *width* 1/3) (random *height*))
+        (make-random-vec *width* *height*)
 
         (slot-value game 'p-c2)
-        (make-vec (* *width* 2/3) (random *height*))
+        (make-random-vec *width* *height*)
 
         (slot-value game 'p-to)
-        (make-vec (- *width* 20) (random-around *center-y* 50))
+        (make-random-vec *width* *height*)
 
         (slot-value game 'ts) 0
         )
