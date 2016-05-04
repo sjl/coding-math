@@ -24,6 +24,7 @@
     #:distance
     #:random-range
     #:random-around
+    #:random-dist
     #:norm
     #:lerp
     #:precise-lerp

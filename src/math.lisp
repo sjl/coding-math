@@ -21,6 +21,11 @@
   (random-range (- val range)
                 (+ val range)))
 
+(defun random-dist (min max iterations)
+  (loop :repeat iterations
+        :summing (random-range min max) :into total
+        :finally (return (/ total iterations))))
+
 
 ;;;; Number range mapping
 (defun norm (min max val)
