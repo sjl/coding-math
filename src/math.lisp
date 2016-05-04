@@ -1,10 +1,16 @@
 (in-package #:coding-math.math)
 
-(declaim (inline outsidep insidep wrap-zero wrap-range))
-(declaim (inline norm lerp clamp distance))
+(declaim (inline square outsidep insidep wrap-zero wrap-range
+                 norm lerp clamp distance))
+
 
 ;;;; Constants
 (defparameter tau (* pi 2))
+
+
+;; Basics
+(defun square (x)
+  (* x x))
 
 
 ;; Geometry

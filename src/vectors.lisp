@@ -1,7 +1,12 @@
 (in-package #:coding-math.vectors)
 
 
-(declaim (inline vec-x vec-y make-vec))
+(declaim (inline vec-x vec-y make-vec
+                 vec-magnitude vec-angle vec-direction
+                 vec-add vec-sub vec-mul vec-div
+                 vec-add! vec-sub! vec-mul! vec-div!
+                 vec-lerp
+                 ))
 
 (defstruct (vec
              (:constructor make-vec
@@ -9,6 +14,9 @@
              (:type vector))
   (x 0 :type real)
   (y 0 :type real))
+
+(defun make-random-vec (max-x max-y)
+  (make-vec (random max-x) (random max-y)))
 
 
 (defun make-vec-md (magnitude angle)
@@ -26,6 +34,12 @@
     `(let ((,(first bindings) (vec-x ,vec))
            (,(second bindings) (vec-y ,vec)))
        ,@body)))
+
+(defmacro with-vecs (bindings &body body)
+  (if (null bindings)
+    `(progn ,@body)
+    (destructuring-bind (vars vec-form . remaining) bindings
+      `(with-vec ,vars ,vec-form (with-vecs ,remaining ,@body)))))
 
 
 (defun vec-magnitude (vec)
@@ -89,6 +103,13 @@
 (defun vec-div! (v s)
   (setf (vec-x v) (/ (vec-x v) s)
         (vec-y v) (/ (vec-y v) s)))
+
+
+(defun vec-lerp (v1 v2 n)
+  (with-vecs ((x1 y1) v1
+              (x2 y2) v2)
+    (make-vec (lerp x1 x2 n)
+              (lerp y1 y2 n))))
 
 
 (defun vec-to-string (v)

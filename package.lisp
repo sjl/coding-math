@@ -21,6 +21,7 @@
     #:coding-math.utils)
   (:export
     #:tau
+    #:square
     #:distance
     #:random-range
     #:random-around
@@ -62,6 +63,7 @@
     #:make-vec
     #:make-vec-md
     #:make-vec-ma
+    #:make-random-vec
     #:vec-magnitude
     #:vec-direction
     #:vec-angle
@@ -69,12 +71,15 @@
     #:vec-sub
     #:vec-mul
     #:vec-div
+    #:vec-lerp
     #:vec-add!
     #:vec-sub!
     #:vec-mul!
     #:vec-div!
     #:vec-to-string
-    #:with-vec))
+    #:with-vec
+    #:with-vecs
+    ))
 
 (defpackage #:coding-math.particles
   (:use
@@ -106,7 +111,19 @@
     #:particle-gravitate-remove!
     #:particle-spring-to!
     #:particle-spring-add!
-    #:particle-spring-remove!
+    #:particle-spring-remove!))
+
+(defpackage #:coding-math.points
+  (:use
+    #:cl
+    #:coding-math.math
+    #:coding-math.vectors
+    #:coding-math.quickutils
+    #:coding-math.utils)
+  (:export
+    #:quadratic-bezier
+    #:fast-quadratic-bezier
+    #:cubic-bezier
     ))
 
 (defpackage #:coding-math.fps
@@ -128,6 +145,7 @@
     #:coding-math.fps
     #:coding-math.math
     #:coding-math.vectors
+    #:coding-math.points
     #:coding-math.particles))
 
 (defpackage #:coding-math.ballistics
