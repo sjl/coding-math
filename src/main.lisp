@@ -29,70 +29,32 @@
 (defun draw-point (p)
   (point (vec-x p) (vec-y p)))
 
+(defun oob-p (p &optional (r 0.0))
+  (or (outsidep (- 0 r) (+ *width* r) (vec-x p))
+      (outsidep (- 0 r) (+ *height* r) (vec-y p))))
+
 
 (defsketch cm (:width *width*
                :height *height*
                :debug :scancode-d)
     ((ready)
      (mouse)
-     (p-from)
-     (p-to)
-     (p-c1)
-     (p-c2)
-     (ts)
-     (l0-pen (make-pen :stroke (gray 0) :fill (rgb 0.0 0.0 0.0)))
-     (l1-pen (make-pen :stroke (rgb 0 0 0.5) :fill (rgb 0.0 0.0 1.0)))
-     (l2-pen (make-pen :stroke (rgb 0 0.5 0.0) :fill (rgb 0.0 1.0 0.0)))
-     (lines-pen (make-pen :stroke (gray 0)))
-     (final-pen (make-pen :stroke (rgb 0.5 0 0) :fill (rgb 1.0 0.0 0.0)))
-     (fast-pen (make-pen :fill (rgb 0.0 0.0 1.0)))
-     (results)
-     (dots)
+     (particles)
+     (pen (make-pen :fill (gray 0.2)))
      )
   (with-fps
     (background (gray 1))
     ;;
     (when ready
 
-      (incf ts 0.01)
-
-      (let* ((n (abs (sin ts)))
-             (i1 (vec-lerp p-from p-c1 n))
-             (i2 (vec-lerp p-c1 p-c2 n))
-             (i3 (vec-lerp p-c2 p-to n))
-             (ii1 (vec-lerp i1 i2 n))
-             (ii2 (vec-lerp i2 i3 n))
-             (f (vec-lerp ii1 ii2 n))
-             )
-        (with-pen lines-pen
-          (draw-line p-from p-c1)
-          (draw-line p-c1 p-c2)
-          (draw-line p-c2 p-to))
-        (with-pen l0-pen
-          (draw-circle p-from 10)
-          (draw-circle p-to 10)
-          (draw-square p-c1 6)
-          (draw-square p-c2 6))
-        (with-pen l1-pen
-          (draw-line i1 i2)
-          (draw-line i2 i3)
-          (draw-circle i1 5)
-          (draw-circle i2 5)
-          (draw-circle i3 5))
-        (with-pen l2-pen
-          (draw-line ii1 ii2)
-          (draw-circle ii1 3)
-          (draw-circle ii2 3))
-        (with-pen final-pen
-          (bezier (vec-x p-from) (vec-y p-from)
-                  (vec-x p-c1) (vec-y p-c1)
-                  (vec-x p-c2) (vec-y p-c2)
-                  (vec-x p-to) (vec-y p-to))
-          (loop :for i :from 0.0 :to 1.0 :by 0.01
-                :do (draw-point (cubic-bezier p-from p-to p-c1 p-c2 i)))
-          (draw-circle f 5))
-
+      (with-pen pen
+        (loop :for p :in particles :do
+              (particle-update! p)
+              (if (oob-p (particle-pos p))
+                (setf particles (remove p particles))
+                (draw-circle (particle-pos p) 3)))
         )
+
       )
 
     ;;
@@ -105,19 +67,17 @@
 
 (defun reset (game)
   (setf (slot-value game 'ready) nil)
-  (setf (slot-value game 'p-from)
-        (make-random-vec *width* *height*)
+  (setf (slot-value game 'particles)
+        (loop :repeat 200
+              :collect (make-particle *center-x*
+                                      *center-y*
+                                      :speed (random 2.0)
+                                      :direction (random tau)
+                                      )
 
-        (slot-value game 'p-c1)
-        (make-random-vec *width* *height*)
 
-        (slot-value game 'p-c2)
-        (make-random-vec *width* *height*)
+              )
 
-        (slot-value game 'p-to)
-        (make-random-vec *width* *height*)
-
-        (slot-value game 'ts) 0
         )
   (setf (slot-value game 'ready) t))
 
