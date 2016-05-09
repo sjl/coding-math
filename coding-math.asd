@@ -34,5 +34,5 @@
                                (:file "ballistics")))
                  (:module "3d"
                   :serial t
-                  :components ())))))
+                  :components ((:file "demo")))))))
 

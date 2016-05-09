@@ -86,6 +86,24 @@
     #:with-vecs
     ))
 
+(defpackage #:coding-math.2d.hitboxes
+  (:use
+    #:cl
+    #:sketch
+    #:coding-math.math
+    #:coding-math.quickutils
+    #:coding-math.utils)
+  (:export
+    #:hitbox-x
+    #:hitbox-y
+    #:hitbox-radius
+    #:hitbox-width
+    #:hitbox-height
+    #:circles-collide-p
+    #:circle-point-collide-p
+    #:rect-point-collide-p
+    #:rects-collide-p))
+
 (defpackage #:coding-math.2d.particles
   (:use
     #:cl
@@ -136,23 +154,6 @@
     #:multicurve
     ))
 
-(defpackage #:coding-math.2d.hitboxes
-  (:use
-    #:cl
-    #:sketch
-    #:coding-math.math
-    #:coding-math.quickutils
-    #:coding-math.utils)
-  (:export
-    #:hitbox-x
-    #:hitbox-y
-    #:hitbox-radius
-    #:hitbox-width
-    #:hitbox-height
-    #:circles-collide-p
-    #:circle-point-collide-p
-    #:rect-point-collide-p
-    #:rects-collide-p))
 
 (defpackage #:coding-math.2d.demo
   (:use
@@ -179,3 +180,13 @@
 
 
 ;;;; 3D stuff
+(defpackage #:coding-math.3d.demo
+  (:use
+    #:cl
+    #:sketch
+    #:coding-math.quickutils
+    #:coding-math.utils
+    #:coding-math.fps
+    #:coding-math.math
+    ))
+
