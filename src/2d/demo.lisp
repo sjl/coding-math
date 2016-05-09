@@ -1,4 +1,4 @@
-(in-package #:coding-math)
+(in-package #:coding-math.2d.demo)
 
 ;;;; Config
 (defparameter *width* 600)

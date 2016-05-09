@@ -1,4 +1,4 @@
-(in-package #:coding-math.points)
+(in-package #:coding-math.2d.points)
 
 (defun quadratic-bezier (from to control n)
   (vec-lerp (vec-lerp from control n)

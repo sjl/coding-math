@@ -1,3 +1,4 @@
+;;;; Generic stuff
 (defpackage #:coding-math.utils
   (:use
     #:cl
@@ -8,11 +9,9 @@
     #:make-sketch
     #:scancode-case
     #:with-vals
-    #:mulf
     #:zap%
     #:%
-    #:dividesp
-    #:square))
+    ))
 
 (defpackage #:coding-math.math
   (:use
@@ -21,6 +20,8 @@
     #:coding-math.utils)
   (:export
     #:tau
+    #:mulf
+    #:dividesp
     #:square
     #:distance
     #:random-range
@@ -39,18 +40,22 @@
     #:round-to-places
     #:round-to-nearest
     #:ranges-overlap-p
-    #:hitbox-x
-    #:hitbox-y
-    #:hitbox-radius
-    #:hitbox-width
-    #:hitbox-height
-    #:circles-collide-p
-    #:circle-point-collide-p
-    #:rect-point-collide-p
-    #:rects-collide-p
     ))
 
-(defpackage #:coding-math.vectors
+(defpackage #:coding-math.fps
+  (:use
+    #:cl
+    #:sketch
+    #:coding-math.quickutils
+    #:coding-math.math
+    #:coding-math.utils)
+  (:export
+    #:with-fps
+    #:draw-fps))
+
+
+;;;; 2D stuff
+(defpackage #:coding-math.2d.vectors
   (:use
     #:cl
     #:coding-math.math
@@ -81,11 +86,12 @@
     #:with-vecs
     ))
 
-(defpackage #:coding-math.particles
+(defpackage #:coding-math.2d.particles
   (:use
     #:cl
     #:coding-math.math
-    #:coding-math.vectors
+    #:coding-math.2d.vectors
+    #:coding-math.2d.hitboxes
     #:coding-math.quickutils
     #:coding-math.utils)
   (:export
@@ -113,12 +119,12 @@
     #:particle-spring-add!
     #:particle-spring-remove!))
 
-(defpackage #:coding-math.points
+(defpackage #:coding-math.2d.points
   (:use
     #:cl
     #:sketch
     #:coding-math.math
-    #:coding-math.vectors
+    #:coding-math.2d.vectors
     #:coding-math.quickutils
     #:coding-math.utils)
   (:export
@@ -130,17 +136,25 @@
     #:multicurve
     ))
 
-(defpackage #:coding-math.fps
+(defpackage #:coding-math.2d.hitboxes
   (:use
     #:cl
     #:sketch
+    #:coding-math.math
     #:coding-math.quickutils
     #:coding-math.utils)
   (:export
-    #:with-fps
-    #:draw-fps))
+    #:hitbox-x
+    #:hitbox-y
+    #:hitbox-radius
+    #:hitbox-width
+    #:hitbox-height
+    #:circles-collide-p
+    #:circle-point-collide-p
+    #:rect-point-collide-p
+    #:rects-collide-p))
 
-(defpackage #:coding-math
+(defpackage #:coding-math.2d.demo
   (:use
     #:cl
     #:sketch
@@ -148,16 +162,20 @@
     #:coding-math.utils
     #:coding-math.fps
     #:coding-math.math
-    #:coding-math.vectors
-    #:coding-math.points
-    #:coding-math.particles))
+    #:coding-math.2d.vectors
+    #:coding-math.2d.points
+    #:coding-math.2d.particles))
 
-(defpackage #:coding-math.ballistics
+(defpackage #:coding-math.2d.ballistics
   (:use
     #:cl
     #:sketch
     #:coding-math.quickutils
-    #:coding-math.particles
+    #:coding-math.2d.particles
+    #:coding-math.2d.hitboxes
     #:coding-math.utils
     #:coding-math.math
     #:coding-math.fps))
+
+
+;;;; 3D stuff

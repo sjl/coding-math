@@ -1,4 +1,4 @@
-(in-package #:coding-math.particles)
+(in-package #:coding-math.2d.particles)
 
 (defstruct (particle
              (:constructor make-particle%))

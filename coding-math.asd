@@ -16,17 +16,23 @@
                #:fare-quasiquote-readtable)
 
   :serial t
-  :components ((:file "quickutils") ; quickutils package ordering crap
-               (:file "package")
-               (:module "src"
-                :serial t
-                :components ((:file "utils")
-                             (:file "math")
-                             (:file "fps")
-                             (:file "vectors")
-                             (:file "particles")
-                             (:file "points")
-                             (:file "main")
-                             (:file "ballistics")
-                             ))))
+  :components
+  ((:file "quickutils") ; quickutils package ordering crap
+   (:file "package")
+   (:module "src"
+    :serial t
+    :components ((:file "utils")
+                 (:file "math")
+                 (:file "fps")
+                 (:module "2d"
+                  :serial t
+                  :components ((:file "vectors")
+                               (:file "hitboxes")
+                               (:file "particles")
+                               (:file "points")
+                               (:file "demo")
+                               (:file "ballistics")))
+                 (:module "3d"
+                  :serial t
+                  :components ())))))
 

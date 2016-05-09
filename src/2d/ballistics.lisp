@@ -1,4 +1,4 @@
-(in-package #:coding-math.ballistics)
+(in-package #:coding-math.2d.ballistics)
 
 ;;;; Config
 (defparameter *width* 600)

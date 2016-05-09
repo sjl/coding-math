@@ -1,4 +1,4 @@
-(in-package #:coding-math.vectors)
+(in-package #:coding-math.2d.vectors)
 
 
 (declaim (inline vec-x vec-y make-vec

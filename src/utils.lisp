@@ -1,14 +1,5 @@
 (in-package #:coding-math.utils)
 
-(defun dividesp (n divisor)
-  "Return whether `n` is evenly divisible by `divisor`."
-  (zerop (mod n divisor)))
-
-(defun square (n)
-  "Return the square of `n`."
-  (* n n))
-
-
 (defmacro zap% (place function &rest arguments &environment env)
   "Update `place` by applying `function` to its current value and `arguments`.
 
@@ -33,10 +24,6 @@
              (funcall ,function
                       ,@(substitute access-expr '% arguments))))
       ,store-expr)))
-
-(defmacro mulf (place n)
-  "Multiply `place` by `n` in-place."
-  `(zap% ,place #'* % ,n))
 
 
 (defmacro in-context (&body body)
@@ -65,6 +52,7 @@
                       `((sdl2:scancode= ,scancode ,key-scancode)
                         ,@body)))
            pairs)))))
+
 
 (defmacro with-vals (bindings value-form &body body)
   (with-gensyms (val)
