@@ -2,7 +2,7 @@
 ;;;; See http://quickutil.org for details.
 
 ;;;; To regenerate:
-;;;; (qtlc:save-utils-as "quickutils.lisp" :utilities '(:DEFINE-CONSTANT :SWITCH :WHILE :ENSURE-BOOLEAN :WITH-GENSYMS :ONCE-ONLY :IOTA :CURRY :RCURRY :COMPOSE) :ensure-package T :package "CODING-MATH.QUICKUTILS")
+;;;; (qtlc:save-utils-as "quickutils.lisp" :utilities '(:DEFINE-CONSTANT :SWITCH :WHILE :ENSURE-BOOLEAN :WITH-GENSYMS :ONCE-ONLY :IOTA :CURRY :RCURRY :COMPOSE :N-GRAMS) :ensure-package T :package "CODING-MATH.QUICKUTILS")
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unless (find-package "CODING-MATH.QUICKUTILS")
@@ -18,7 +18,7 @@
                                          :SWITCH :UNTIL :WHILE :ENSURE-BOOLEAN
                                          :MAKE-GENSYM-LIST :ONCE-ONLY :IOTA
                                          :ENSURE-FUNCTION :CURRY :RCURRY
-                                         :COMPOSE))))
+                                         :COMPOSE :TAKE :N-GRAMS))))
 
   (defun %reevaluate-constant (name value test)
     (if (not (boundp name))
@@ -307,8 +307,30 @@ and then calling the next one with the primary value of the last."
              (declare (dynamic-extent arguments))
              ,(compose-1 funs))))))
   
+
+  (defun take (n sequence)
+    "Take the first `n` elements from `sequence`."
+    (subseq sequence 0 n))
+  
+
+  (defun n-grams (n sequence)
+    "Find all `n`-grams of the sequence `sequence`."
+    (assert (and (plusp n)
+                 (<= n (length sequence))))
+    
+    (etypecase sequence
+      ;; Lists
+      (list (loop :repeat (1+ (- (length sequence) n))
+                  :for seq :on sequence
+                  :collect (take n seq)))
+      
+      ;; General sequences
+      (sequence (loop :for i :to (- (length sequence) n)
+                      :collect (subseq sequence i (+ i n))))))
+  
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (export '(define-constant switch eswitch cswitch while ensure-boolean
-            with-gensyms with-unique-names once-only iota curry rcurry compose)))
+            with-gensyms with-unique-names once-only iota curry rcurry compose
+            n-grams)))
 
 ;;;; END OF quickutils.lisp ;;;;

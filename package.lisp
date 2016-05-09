@@ -127,6 +127,7 @@
     #:cubic-bezier
     #:quadratic-bezier-curve
     #:draw-function
+    #:multicurve
     ))
 
 (defpackage #:coding-math.fps

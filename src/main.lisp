@@ -39,13 +39,12 @@
                :debug :scancode-d)
     ((ready)
      (mouse)
-     (p0)
-     (p1)
-     (p2)
-     (cp)
+     (start)
+     (end)
+     (controls)
      (end-pen (make-pen :fill (gray 0.2)))
      (control-pen (make-pen :stroke (gray 0.1) :fill (gray 0.5)))
-     (line-pen (make-pen :stroke (gray 0.5)))
+     (line-pen (make-pen :stroke (gray 0.8)))
      (target-pen (make-pen :fill (rgb 0.5 0.0 0.0)))
      (fn-pen (make-pen :stroke (rgb 0.0 0 0.5)
                        :weight 1
@@ -60,38 +59,17 @@
     ;;
     (when ready
 
-      (with-vecs ((p0x p0y) p0
-                  (p1x p1y) mouse
-                  (p2x p2y) p2)
-        (setf cp (make-vec
-                   (- (* p1x 2)
-                      (/ (+ p0x p2x) 2))
-                   (- (* p1y 2)
-                      (/ (+ p0y p2y) 2))))
-        (with-pen line-pen
-          (draw-line p0 cp)
-          (draw-line cp p2))
-        (with-pen end-pen
-          (draw-circle p0 5)
-          (draw-circle p2 5))
-        (with-pen target-pen
-          (draw-circle mouse 5))
-        (with-pen control-pen
-          (draw-circle cp 5))
-        (with-pen fn-pen
-          (draw-function
-            (lambda (v)
-              (make-vec (map-range 0.0 tau 0.0 *width* v)
-                        (+ *center-y* (* 100.0 (sin v)))))
-            :start 0.0
-            :end tau
-            )
-          )
-        (with-pen curve-pen
-          (quadratic-bezier-curve p0 p2 mouse)
-          (quadratic-bezier-curve p0 p2 cp)
-                
-                ))
+      (with-pen line-pen
+        (loop :for (a b) :on (append (list start) controls (list end))
+              :when b :do (draw-line a b)))
+      (with-pen end-pen
+        (draw-circle start 5)
+        (draw-circle end 5))
+      (with-pen control-pen
+        (mapc (rcurry #'draw-circle 5) controls))
+      (with-pen curve-pen
+        (multicurve start controls end))
+
       )
 
     ;;
@@ -105,12 +83,15 @@
 (defun reset (game)
   (setf (slot-value game 'ready) nil)
   (setf
-    (slot-value game 'p0)
-    (make-random-vec *width* *height*)
-    (slot-value game 'p1)
-    (make-random-vec *width* *height*)
-    (slot-value game 'p2)
-    (make-random-vec *width* *height*)
+    (slot-value game 'start)
+    (make-vec 0 *center-y*)
+    (slot-value game 'end)
+    (make-vec *width* *center-y*)
+    (slot-value game 'controls)
+    ; (loop :for x :from 100 :below *width* :by 100
+    ;       :collect (make-vec x (random *height*)))
+    (loop :repeat 8
+          :collect (make-random-vec *width* *height*))
     )
   (setf (slot-value game 'ready) t))
 

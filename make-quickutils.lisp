@@ -12,5 +12,6 @@
                :curry
                :rcurry
                :compose
+               :n-grams
                )
   :package "CODING-MATH.QUICKUTILS")

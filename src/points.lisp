@@ -44,11 +44,13 @@
   (draw-function (curry #'fast-quadratic-bezier from to control)))
 
 
-; (defun multicurve (points)
-;   (loop :for (p0 p1 . remaining) :on points
-;         :when remaining
-;         :for midx = (/ (+ (vec-x p0) (vec-x p1)) 2)
-;         :for midy = (/ (+ (vec-y p0) (vec-y p1)) 2)
-;         )
-  
-;   )
+(defun multicurve (from controls to)
+  (labels ((midpoint (pair)
+             (vec-lerp (car pair) (cadr pair) 0.5))
+           (midpoints (points)
+             (mapcar #'midpoint (n-grams 2 points))))
+    (let ((mids (midpoints controls)))
+      (loop :for start :in (cons from mids)
+            :for end :in (append mids (list to))
+            :for control :in controls
+            :do (quadratic-bezier-curve start end control)))))
