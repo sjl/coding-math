@@ -1,6 +1,6 @@
 (1 scancode-case)
 (1 make-sketch)
 (2 with-vals)
-(2 with-vec)
-(1 with-vecs)
+(2 with-vec with-vec3)
+(1 with-vecs with-vec3s)
 (1 with-setup)

@@ -180,6 +180,27 @@
 
 
 ;;;; 3D stuff
+(defpackage #:coding-math.3d.vectors
+  (:use
+    #:cl
+    #:coding-math.math
+    #:coding-math.utils
+    #:coding-math.quickutils)
+  (:export
+    #:vec3
+    #:vec3-x
+    #:vec3-y
+    #:make-vec3
+    #:make-random-vec3
+    #:vec3-magnitude
+    #:vec3-add #:vec3-add!
+    #:vec3-sub #:vec3-sub!
+    #:vec3-mul #:vec3-mul!
+    #:vec3-div #:vec3-div!
+    #:vec3-lerp
+    #:with-vec3
+    #:with-vec3s))
+
 (defpackage #:coding-math.3d.demo
   (:use
     #:cl
@@ -188,5 +209,6 @@
     #:coding-math.utils
     #:coding-math.fps
     #:coding-math.math
+    #:coding-math.3d.vectors
     ))
 
