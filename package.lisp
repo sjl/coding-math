@@ -116,6 +116,7 @@
 (defpackage #:coding-math.points
   (:use
     #:cl
+    #:sketch
     #:coding-math.math
     #:coding-math.vectors
     #:coding-math.quickutils
@@ -124,6 +125,8 @@
     #:quadratic-bezier
     #:fast-quadratic-bezier
     #:cubic-bezier
+    #:quadratic-bezier-curve
+    #:draw-function
     ))
 
 (defpackage #:coding-math.fps

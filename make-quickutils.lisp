@@ -8,5 +8,9 @@
                :ensure-boolean
                :with-gensyms
                :once-only
+               :iota
+               :curry
+               :rcurry
+               :compose
                )
   :package "CODING-MATH.QUICKUTILS")

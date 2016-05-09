@@ -18,7 +18,7 @@
           (+ (* (square (- 1 n)) fy)
              (* 2 (- 1 n) n cy)
              (* n n ty))))
-  (values))
+  destination)
 
 
 (defun cubic-bezier (from to control-1 control-2 n)
@@ -29,3 +29,26 @@
                       (vec-lerp control-2 to n)
                       n)
             n))
+
+
+(declaim (inline draw-function))
+(defun draw-function (fn &key (start 0.0) (end 1.0))
+  (let ((steps (sketch::pen-curve-steps (sketch::env-pen sketch::*env*))))
+    (apply #'polyline
+           (mapcan (compose (rcurry #'coerce 'list) fn)
+                   (iota (1+ steps)
+                         :start 0.0
+                         :step (/ (- end start) steps))))))
+
+(defun quadratic-bezier-curve (from to control)
+  (draw-function (curry #'fast-quadratic-bezier from to control)))
+
+
+; (defun multicurve (points)
+;   (loop :for (p0 p1 . remaining) :on points
+;         :when remaining
+;         :for midx = (/ (+ (vec-x p0) (vec-x p1)) 2)
+;         :for midy = (/ (+ (vec-y p0) (vec-y p1)) 2)
+;         )
+  
+;   )

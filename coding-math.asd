@@ -25,6 +25,7 @@
                              (:file "fps")
                              (:file "vectors")
                              (:file "particles")
+                             (:file "points")
                              (:file "main")
                              (:file "ballistics")
                              ))))
