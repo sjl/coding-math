@@ -11,6 +11,7 @@
     #:with-vals
     #:zap%
     #:%
+    #:setf-slots
     ))
 
 (defpackage #:coding-math.math
@@ -194,6 +195,7 @@
     #:vec3
     #:vec3-x
     #:vec3-y
+    #:vec3-z
     #:make-vec3
     #:make-random-vec3
     #:vec3-magnitude

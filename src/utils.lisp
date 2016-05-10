@@ -32,7 +32,6 @@
     (progn ,@body)
     (pop-matrix)))
 
-
 (defmacro make-sketch (class &rest bindings)
   `(let*
     (,@(loop :for (k v) :in bindings
@@ -41,7 +40,6 @@
       ,class
       ,@(loop :for (k) :in bindings
               :append (list (alexandria:make-keyword k) k)))))
-
 
 (defmacro scancode-case (scancode-form &rest pairs)
   (with-gensyms (scancode)
@@ -60,3 +58,12 @@
             ,@(loop :for (s accessor) :in bindings
                     :collect `(,s (,accessor ,val))))
       ,@body)))
+
+(defmacro setf-slots (object &rest bindings)
+  `(with-slots ,(remove-duplicates
+                  (loop :for (slot) :on bindings :by #'cddr
+                        :collect slot))
+    ,object
+    (setf
+      ,@(loop :for (slot val) :on bindings :by #'cddr
+              :append (list slot val)))))

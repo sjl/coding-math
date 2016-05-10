@@ -8,6 +8,7 @@
 (defparameter *center-x* (/ *width* 2))
 (defparameter *center-y* (/ *height* 2))
 
+
 ;;;; Utils
 (defmacro with-centered-coords (&body body)
   `(in-context
@@ -21,15 +22,20 @@
       (with-centered-coords
         ,@body))))
 
+
 ;;;; Draw
+(defun perspective (focal-length z)
+  (/ focal-length (+ focal-length z)))
+
 (defun draw-shape (shape focal-length size)
-  (destructuring-bind (x y z) shape
-    (let ((perspective (/ focal-length (+ focal-length z))))
-      (in-context
-        (translate (* x perspective)
-                   (* y perspective))
-        (scale perspective)
-        (circle 0 0 size)))))
+  (in-context
+    (scale (perspective focal-length (getf shape :z)))
+    (translate (getf shape :x)
+               (getf shape :y))
+    ; (rect (- size) (- size) (* 2 size) (* 2 size))
+    (circle 0 0 size)
+    ))
+
 
 ;;;; Sketch
 (defsketch demo (:width *width*
@@ -37,49 +43,102 @@
                  :debug :scancode-d)
     ((ready)
      (mouse)
-     (fl 300)
+     (fl)
      (shapes)
-     (simple-pen (make-pen :fill (gray 0.2)))
+     (cz)
+     (radius)
+     (base-angle)
+     (angle-speed)
+     (y-speed)
+     ; (simple-pen (make-pen :weight 4 :stroke (gray 0.0) :fill (gray 0.6)))
+     (simple-pen (make-pen :fill (gray 0.1)))
      )
   (with-setup ready
     ;;
+    (setf angle-speed (map-range 0 *height* -0.08 0.08 (cdr mouse)))
+    (incf base-angle angle-speed)
+    (setf shapes (sort shapes #'> :key (rcurry #'getf :z)))
     (with-pen simple-pen
-      (loop :for shape :in shapes :do
-            (incf (caddr shape) -50)
-            (wrapf (caddr shape) 0 10000))
-      ; (setf shapes (sort shapes #'> :key #'caddr))
-      (mapc (rcurry #'draw-shape fl 30)
-            shapes)
-      )
+      (loop :for shape :in shapes
+            :for angle = (getf shape :angle)
+            :do
+            (setf (getf shape :x)
+                  (* (car mouse) (cos (+ base-angle angle)))
+                  (getf shape :z)
+                  (+ cz (* radius (sin (+ base-angle angle)))))
+            (incf (getf shape :y) y-speed)
+            (wrapf (getf shape :y) (* *height* -1/2) (* *height* 1/2))
+            (draw-shape shape fl 5)))
     ;;
     ))
-
-(defun make-demo ()
-  (make-sketch 'demo
-    (mouse nil)))
 
 
 (defun reset (game)
-  (setf (slot-value game 'ready) nil)
-  (setf
-    (slot-value game 'shapes)
-    (loop :repeat 200
-          :collect (list (random-range -500 500)
-                         (random-range -400 400)
-                         (random-range 0 10000))))
-  (setf (slot-value game 'ready) t))
-
+  (setf-slots game
+    ready nil
+    ;;
+    fl 300
+    cz 200
+    radius 50
+    base-angle 0.0
+    angle-speed 0.01
+    y-speed 0.5
+    shapes (loop
+             :with nshapes = 200
+             :for i :from 0 :to nshapes
+             :collect
+             (list :x nil
+                   :y (- (* i (/ *height* nshapes))
+                         (/ *height* 2))
+                   :z 0
+                   :angle (* i (/ (* 6 tau) nshapes))))
+    ;;
+    ready t))
 
 
 ;;;; Mouse
+(defun mousemove (instance x y)
+  (with-slots (mouse) instance
+    (setf (car mouse) x)
+    (setf (cdr mouse) y)
+    ;;
+    ;;
+    )
+  )
+
+(defun mousedown-left (instance x y)
+  (declare (ignorable instance x y))
+  )
+
+(defun mousedown-right (instance x y)
+  (declare (ignorable instance x y))
+  )
+
+(defun mouseup-left (instance x y)
+  (declare (ignorable instance x y))
+  )
+
+(defun mouseup-right (instance x y)
+  (declare (ignorable instance x y))
+  )
+
+
 (defmethod kit.sdl2:mousemotion-event ((window demo) ts b x y xrel yrel)
   (declare (ignore ts b xrel yrel))
-  (with-slots (mouse) window
-    (setf (slot-value window 'mouse) ; todo fix
-          (list x y))
-    ;;
-    ;;
-    ))
+  (mousemove window x y))
+
+(defmethod kit.sdl2:mousebutton-event ((window demo) state ts button x y)
+  (declare (ignore ts))
+  (funcall (case state
+             (:mousebuttondown
+              (case button
+                (1 #'mousedown-left)
+                (3 #'mousedown-right)))
+             (:mousebuttonup
+              (case button
+                (1 #'mouseup-left)
+                (3 #'mouseup-right))))
+           window x y))
 
 
 ;;;; Keyboard
@@ -101,6 +160,12 @@
     ((eql state :keyup) (keyup instance (sdl2:scancode-value keysym)))
     ((eql state :keydown) (keydown instance (sdl2:scancode-value keysym)))
     (t nil)))
+
+
+;;;; Make
+(defun make-demo ()
+  (make-sketch 'demo
+    (mouse (cons nil nil))))
 
 
 ;;;; Run

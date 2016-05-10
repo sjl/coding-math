@@ -4,3 +4,4 @@
 (2 with-vec with-vec3)
 (1 with-vecs with-vec3s)
 (1 with-setup)
+(1 setf-slots)
