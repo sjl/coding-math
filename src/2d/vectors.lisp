@@ -10,8 +10,7 @@
 
 (defstruct (vec
              (:constructor make-vec
-              (&optional (x 0) (y 0)))
-             (:type vector))
+              (&optional (x 0) (y 0))))
   (x 0 :type real)
   (y 0 :type real))
 

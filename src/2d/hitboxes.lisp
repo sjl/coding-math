@@ -27,6 +27,13 @@
   (getf object :height))
 
 
+(defmethod hitbox-x ((object vec))
+  (vec-x object))
+
+(defmethod hitbox-y ((object vec))
+  (vec-y object))
+
+
 (defun circles-collide-p (c0 c1)
   (let ((d (distance (hitbox-x c0) (hitbox-y c0)
                      (hitbox-x c1) (hitbox-y c1))))
@@ -60,3 +67,8 @@
                              r1x (+ r1x r1w))
            (ranges-overlap-p r0y (+ r0y r0h)
                              r1y (+ r1y r1h))))))
+
+
+(defgeneric drag-location-vec (object))
+(defgeneric (setf drag-location-vec) (new-value object))
+(defgeneric drag-requested-p (object mouse))

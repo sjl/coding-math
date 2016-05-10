@@ -9,16 +9,17 @@
 
 
 ;;;; Sketch
-(defun draw-particle (p pen)
-  (with-pen pen
-    (circle (particle-x p) (particle-y p) (particle-radius p))))
+(defun draw-particle (p)
+  (circle (particle-x p) (particle-y p) (particle-radius p)))
 
 (defun draw-line (p1 p2)
   (with-vecs ((x1 y1) p1 (x2 y2) p2)
     (line x1 y1 x2 y2)))
 
-(defun draw-circle (p radius)
-  (circle (vec-x p) (vec-y p) radius))
+(defun draw-circle (p &optional (radius 5))
+  (if (listp p)
+    (circle (getf p :x) (getf p :y) (or (getf p :radius) radius))
+    (circle (vec-x p) (vec-y p) radius)))
 
 (defun draw-square (p radius)
   (rect (- (vec-x p) radius)
@@ -39,20 +40,20 @@
                :debug :scancode-d)
     ((ready)
      (mouse)
-     (start)
-     (end)
-     (controls)
-     (end-pen (make-pen :fill (gray 0.2)))
-     (control-pen (make-pen :stroke (gray 0.1) :fill (gray 0.5)))
-     (line-pen (make-pen :stroke (gray 0.8)))
-     (target-pen (make-pen :fill (rgb 0.5 0.0 0.0)))
-     (fn-pen (make-pen :stroke (rgb 0.0 0 0.5)
-                       :weight 1
-                       :curve-steps 80))
-     (curve-pen (make-pen :stroke (rgb 0.5 0 0)
-                          :weight 1
-                          :curve-steps 60
-                          :fill (rgb 0.5 0.0 0.0)))
+     (dragging)
+     (p1)
+     (c1)
+     (c2)
+     (p2)
+     (handles)
+     (control-pen (make-pen :stroke (gray 0.1)
+                            :weight 1
+                            :fill (rgb 0.5 0.5 0.9)))
+     (end-pen (make-pen :stroke (gray 0.1)
+                        :weight 1
+                        :fill (gray 0.5)))
+     (line-pen (make-pen :stroke (gray 0.7)))
+     (curve-pen (make-pen :stroke (rgb 0.7 0.2 0.2)))
      )
   (with-fps
     (background (gray 1))
@@ -60,51 +61,107 @@
     (when ready
 
       (with-pen line-pen
-        (loop :for (a b) :on (append (list start) controls (list end))
-              :when b :do (draw-line a b)))
+        (draw-line (particle-pos p1)
+                   (particle-pos c1))
+        (draw-line (particle-pos c1)
+                   (particle-pos c2))
+        (draw-line (particle-pos c2)
+                   (particle-pos p2)))
       (with-pen end-pen
-        (draw-circle start 5)
-        (draw-circle end 5))
+        (draw-particle p1)
+        (draw-particle p2))
       (with-pen control-pen
-        (mapc (rcurry #'draw-circle 5) controls))
+        (draw-particle c1)
+        (draw-particle c2))
       (with-pen curve-pen
-        (multicurve start controls end))
+        (with-vecs ((p1x p1y) (particle-pos p1)
+                    (c1x c1y) (particle-pos c1)
+                    (c2x c2y) (particle-pos c2)
+                    (p2x p2y) (particle-pos p2))
+          (bezier p1x p1y c1x c1y c2x c2y p2x p2y))
+        )
 
       )
 
     ;;
     ))
 
-(defun make-cm ()
-  (make-sketch 'cm
-    (mouse (make-vec))))
-
 
 (defun reset (game)
   (setf (slot-value game 'ready) nil)
-  (setf
-    (slot-value game 'start)
-    (make-vec 0 *center-y*)
-    (slot-value game 'end)
-    (make-vec *width* *center-y*)
-    (slot-value game 'controls)
-    ; (loop :for x :from 100 :below *width* :by 100
-    ;       :collect (make-vec x (random *height*)))
-    (loop :repeat 8
-          :collect (make-random-vec *width* *height*))
+  ;;
+  (let ((p1 (make-particle (random *width*) (random *height*) :radius 10))
+        (c1 (make-particle (random *width*) (random *height*) :radius 8))
+        (c2 (make-particle (random *width*) (random *height*) :radius 8))
+        (p2 (make-particle (random *width*) (random *height*) :radius 10)))
+    (setf
+      (slot-value game 'p1) p1
+      (slot-value game 'c1) c1
+      (slot-value game 'c2) c2
+      (slot-value game 'p2) p2
+      (slot-value game 'handles) (list p1 c1 c2 p2)
+      )
     )
+  ;;
   (setf (slot-value game 'ready) t))
 
 
 ;;;; Mouse
-(defmethod kit.sdl2:mousemotion-event ((window cm) ts b x y xrel yrel)
-  (declare (ignore ts b xrel yrel))
-  (with-slots (mouse) window
+(defun mousemove (instance x y)
+  (with-slots (dragging mouse) instance
     (setf (vec-x mouse) x)
     (setf (vec-y mouse) y)
     ;;
+    (when dragging
+      (destructuring-bind (thing . offset) dragging
+        (setf (drag-location-vec thing)
+              (vec-add mouse offset)))
+      )
     ;;
-    ))
+    )
+  )
+
+(defun mousedown-left (instance x y)
+  (declare (ignorable instance x y))
+  (with-slots (dragging mouse handles) instance
+    (loop :for handle :in handles
+          :when (drag-requested-p handle (make-vec x y))
+          :do (setf dragging
+                    (cons handle
+                          (vec-sub (drag-location-vec handle)
+                                   mouse)))))
+  )
+
+(defun mousedown-right (instance x y)
+  (declare (ignorable instance x y))
+  )
+
+(defun mouseup-left (instance x y)
+  (declare (ignorable instance x y))
+  (setf (slot-value instance 'dragging) nil)
+  )
+
+(defun mouseup-right (instance x y)
+  (declare (ignorable instance x y))
+  )
+
+
+(defmethod kit.sdl2:mousemotion-event ((window cm) ts b x y xrel yrel)
+  (declare (ignore ts b xrel yrel))
+  (mousemove window x y))
+
+(defmethod kit.sdl2:mousebutton-event ((window cm) state ts button x y)
+  (declare (ignore ts))
+  (funcall (case state
+             (:mousebuttondown
+              (case button
+                (1 #'mousedown-left)
+                (3 #'mousedown-right)))
+             (:mousebuttonup
+              (case button
+                (1 #'mouseup-left)
+                (3 #'mouseup-right))))
+           window x y))
 
 
 ;;;; Keyboard
@@ -129,4 +186,10 @@
 
 
 ;;;; Run
+(defun make-cm ()
+  (make-sketch 'cm
+    (mouse (make-vec))))
+
+
 ; (defparameter *demo* (make-cm))
+

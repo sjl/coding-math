@@ -146,3 +146,13 @@
 
 (defmethod hitbox-radius ((p particle))
   (particle-radius p))
+
+
+(defmethod drag-requested-p ((p particle) mouse)
+  (circle-point-collide-p p mouse))
+
+(defmethod drag-location-vec ((p particle))
+  (particle-pos p))
+
+(defmethod (setf drag-location-vec) (new-value (p particle))
+  (setf (particle-pos p) new-value))

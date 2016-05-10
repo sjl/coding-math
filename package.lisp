@@ -90,6 +90,7 @@
   (:use
     #:cl
     #:sketch
+    #:coding-math.2d.vectors
     #:coding-math.math
     #:coding-math.quickutils
     #:coding-math.utils)
@@ -99,6 +100,8 @@
     #:hitbox-radius
     #:hitbox-width
     #:hitbox-height
+    #:drag-requested-p
+    #:drag-location-vec
     #:circles-collide-p
     #:circle-point-collide-p
     #:rect-point-collide-p
@@ -165,6 +168,7 @@
     #:coding-math.math
     #:coding-math.2d.vectors
     #:coding-math.2d.points
+    #:coding-math.2d.hitboxes
     #:coding-math.2d.particles))
 
 (defpackage #:coding-math.2d.ballistics
