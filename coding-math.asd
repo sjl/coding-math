@@ -35,5 +35,6 @@
                  (:module "3d"
                   :serial t
                   :components ((:file "vectors")
+                               (:file "coordinates")
                                (:file "demo")))))))
 

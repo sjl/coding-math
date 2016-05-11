@@ -207,6 +207,18 @@
     #:with-vec3
     #:with-vec3s))
 
+(defpackage #:coding-math.3d.coordinates
+  (:use
+    #:cl
+    #:coding-math.math
+    #:coding-math.3d.vectors
+    #:coding-math.utils
+    #:coding-math.quickutils)
+  (:export
+    #:cartesian-to-cylindrical
+    #:cylindrical-to-cartesian
+    ))
+
 (defpackage #:coding-math.3d.demo
   (:use
     #:cl
@@ -216,5 +228,6 @@
     #:coding-math.fps
     #:coding-math.math
     #:coding-math.3d.vectors
+    #:coding-math.3d.coordinates
     ))
 
