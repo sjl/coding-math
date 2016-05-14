@@ -83,10 +83,10 @@
         :radius (random-range 10 40)))
 
 
-(defsketch game (:width *width*
-                 :height *height*
-                 :debug :scancode-d)
-    ((aiming)
+(defsketch game
+    ((width *width*)
+     (height *height*)
+     (aiming)
      (gun)
      (cannonball)
      (can-shoot-p)
@@ -120,21 +120,6 @@
 
     ;;
     ))
-
-
-(defun make-game ()
-  (make-sketch 'game
-    (aiming nil)
-    (firedp nil)
-    (gun `(x 40
-           y ,*height*
-           angle ,(- (/ tau 8))))
-    (cannonball (make-particle (getf gun 'x)
-                               (getf gun 'y)
-                               :speed 15
-                               :direction (getf gun 'angle)
-                               :radius 7
-                               :gravity 0.2))))
 
 
 ;;;; Mouse
@@ -177,4 +162,4 @@
 
 
 ;;;; Run
-; (defparameter *demo* (make-game))
+; (defparameter *demo* (make-instance 'game))

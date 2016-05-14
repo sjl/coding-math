@@ -35,17 +35,16 @@
       (outsidep (- 0 r) (+ *height* r) (vec-y p))))
 
 
-(defsketch cm (:width *width*
-               :height *height*
-               :debug :scancode-d)
-    ((ready)
-     (mouse)
+(defsketch cm
+    ((mouse (make-vec 0 0))
+     (width *width*)
+     (height *height*)
      (dragging)
-     (p1)
-     (c1)
-     (c2)
-     (p2)
-     (handles)
+     (p1 (make-particle (random *width*) (random *height*) :radius 10))
+     (c1 (make-particle (random *width*) (random *height*) :radius 8))
+     (c2 (make-particle (random *width*) (random *height*) :radius 8))
+     (p2 (make-particle (random *width*) (random *height*) :radius 10))
+     (handles (list p1 c1 c2 p2))
      (control-pen (make-pen :stroke (gray 0.1)
                             :weight 1
                             :fill (rgb 0.5 0.5 0.9)))
@@ -58,52 +57,28 @@
   (with-fps
     (background (gray 1))
     ;;
-    (when ready
-
-      (with-pen line-pen
-        (draw-line (particle-pos p1)
-                   (particle-pos c1))
-        (draw-line (particle-pos c1)
-                   (particle-pos c2))
-        (draw-line (particle-pos c2)
-                   (particle-pos p2)))
-      (with-pen end-pen
-        (draw-particle p1)
-        (draw-particle p2))
-      (with-pen control-pen
-        (draw-particle c1)
-        (draw-particle c2))
-      (with-pen curve-pen
-        (with-vecs ((p1x p1y) (particle-pos p1)
-                    (c1x c1y) (particle-pos c1)
-                    (c2x c2y) (particle-pos c2)
-                    (p2x p2y) (particle-pos p2))
-          (bezier p1x p1y c1x c1y c2x c2y p2x p2y))
-        )
-
+    (with-pen line-pen
+      (draw-line (particle-pos p1)
+                 (particle-pos c1))
+      (draw-line (particle-pos c1)
+                 (particle-pos c2))
+      (draw-line (particle-pos c2)
+                 (particle-pos p2)))
+    (with-pen end-pen
+      (draw-particle p1)
+      (draw-particle p2))
+    (with-pen control-pen
+      (draw-particle c1)
+      (draw-particle c2))
+    (with-pen curve-pen
+      (with-vecs ((p1x p1y) (particle-pos p1)
+                  (c1x c1y) (particle-pos c1)
+                  (c2x c2y) (particle-pos c2)
+                  (p2x p2y) (particle-pos p2))
+        (bezier p1x p1y c1x c1y c2x c2y p2x p2y))
       )
-
     ;;
     ))
-
-
-(defun reset (game)
-  (setf (slot-value game 'ready) nil)
-  ;;
-  (let ((p1 (make-particle (random *width*) (random *height*) :radius 10))
-        (c1 (make-particle (random *width*) (random *height*) :radius 8))
-        (c2 (make-particle (random *width*) (random *height*) :radius 8))
-        (p2 (make-particle (random *width*) (random *height*) :radius 10)))
-    (setf
-      (slot-value game 'p1) p1
-      (slot-value game 'c1) c1
-      (slot-value game 'c2) c2
-      (slot-value game 'p2) p2
-      (slot-value game 'handles) (list p1 c1 c2 p2)
-      )
-    )
-  ;;
-  (setf (slot-value game 'ready) t))
 
 
 ;;;; Mouse
@@ -168,7 +143,7 @@
 (defun keydown (instance scancode)
   (declare (ignorable instance))
   (scancode-case scancode
-    (:scancode-space (reset instance))))
+    (:scancode-space (sketch::prepare instance))))
 
 (defun keyup (instance scancode)
   (declare (ignorable instance))
@@ -186,10 +161,5 @@
 
 
 ;;;; Run
-(defun make-cm ()
-  (make-sketch 'cm
-    (mouse (make-vec))))
-
-
-; (defparameter *demo* (make-cm))
+; (defparameter *demo* (make-instance 'cm))
 

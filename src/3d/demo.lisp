@@ -15,85 +15,91 @@
      (translate *center-x* *center-y*)
      ,@body))
 
-(defmacro with-setup (ready-form &body body)
+(defmacro with-setup (&body body)
   `(with-fps
     (background (gray 1))
-    (when ,ready-form
-      (with-centered-coords
-        ,@body))))
+    (with-centered-coords
+      ,@body)))
 
 
 ;;;; Draw
+(declaim (inline perspective apply-perspective))
 (defun perspective (focal-length z)
   (/ focal-length (+ focal-length z)))
 
-(defun draw-shape (shape focal-length size)
-  (in-context
-    (scale (perspective focal-length (getf shape :z)))
-    (translate (getf shape :x)
-               (getf shape :y))
-    ; (rect (- size) (- size) (* 2 size) (* 2 size))
-    (circle 0 0 size)
-    ))
+(defun apply-perspective (vec focal-length)
+  (let ((p (perspective focal-length (aref vec 2))))
+    (sb-cga:transform-point vec (sb-cga:scale* p p p))))
+
+(defun draw-point (point focal-length size)
+  (let ((p (apply-perspective point focal-length)))
+    (in-context
+      (translate (aref p 0) (aref p 1))
+      (circle 0 0 size))))
+
+(defun draw-line (p1 p2 focal-length)
+  (let ((p1 (apply-perspective p1 focal-length))
+        (p2 (apply-perspective p2 focal-length)))
+    (line (aref p1 0) (aref p1 1)
+          (aref p2 0) (aref p2 1))))
 
 
 ;;;; Sketch
-(defsketch demo (:width *width*
-                 :height *height*
-                 :debug :scancode-d)
-    ((ready)
-     (mouse)
-     (fl)
-     (shapes)
-     (cz)
-     (radius)
-     (base-angle)
-     (angle-speed)
-     (y-speed)
-     ; (simple-pen (make-pen :weight 4 :stroke (gray 0.0) :fill (gray 0.6)))
+(defsketch demo
+    ((width *width*)
+     (height *height*)
+     (mouse (cons 0 0))
+     (fl 300.0)
+     (cz 700.0)
+     (radius 400.0)
+     (cyl-height 380.0)
+     (wraps 6)
+     (base-angle 0.0)
+     (angle-speed -0.02)
+     (circle-size 3)
+     (y-speed -0.5)
+     (shapes (loop
+               :with nshapes = 400
+               :for i :from 0 :to nshapes
+               :collect
+               (sb-cga:vec radius
+                           (* i (/ (* wraps tau) (1+ nshapes)))
+                           (+ #+no (random-around 0.0 50.0)
+                              (map-range 0.0 nshapes cyl-height (- cyl-height) i)))))
+     (model-to-world (sb-cga:translate* 0.0 0.0 cz))
+     ;;
      (simple-pen (make-pen :fill (gray 0.1)))
+     (line-pen (make-pen :stroke (gray 0.1) :weight 2))
      )
-  (with-setup ready
-    ;;
-    (setf angle-speed (map-range 0 *height* -0.08 0.08 (cdr mouse)))
-    (incf base-angle angle-speed)
-    (setf shapes (sort shapes #'> :key (rcurry #'getf :z)))
+  (with-setup
+    ; (setf angle-speed (map-range 0 *height* -0.08 0.08 (cdr mouse)))
+    ; (setf shapes (sort shapes #'> :key (rcurry #'getf :z)))
     (with-pen simple-pen
       (loop :for shape :in shapes
-            :for angle = (getf shape :angle)
             :do
-            (setf (getf shape :x)
-                  (* (car mouse) (cos (+ base-angle angle)))
-                  (getf shape :z)
-                  (+ cz (* radius (sin (+ base-angle angle)))))
-            (incf (getf shape :y) y-speed)
-            (wrapf (getf shape :y) (* *height* -1/2) (* *height* 1/2))
-            (draw-shape shape fl 5)))
+            (setf (aref shape 0) (map-range 0.0 *width* 10 600 (car mouse)))
+            (incf (aref shape 1) angle-speed)
+            (incf (aref shape 2) (random-around 0.0 0.2))
+            ; (incf (aref shape 2) y-speed)
+            ; (wrapf (aref shape 2) (- cyl-height) cyl-height)
+            #+debug (draw-point
+                   (sb-cga:transform-point
+                     (cylindrical-to-cartesian-cga shape)
+                     model-to-world)
+                   fl
+                   circle-size))
+      )
+    (with-pen line-pen
+      (loop :for (a b) :in (n-grams 2 shapes) :do
+            (draw-line (sb-cga:transform-point
+                         (cylindrical-to-cartesian-cga a)
+                         model-to-world)
+                       (sb-cga:transform-point
+                         (cylindrical-to-cartesian-cga b)
+                         model-to-world)
+                       fl)))
     ;;
     ))
-
-
-(defun reset (game)
-  (setf-slots game
-    ready nil
-    ;;
-    fl 300
-    cz 200
-    radius 50
-    base-angle 0.0
-    angle-speed 0.01
-    y-speed 0.5
-    shapes (loop
-             :with nshapes = 200
-             :for i :from 0 :to nshapes
-             :collect
-             (list :x nil
-                   :y (- (* i (/ *height* nshapes))
-                         (/ *height* 2))
-                   :z 0
-                   :angle (* i (/ (* 6 tau) nshapes))))
-    ;;
-    ready t))
 
 
 ;;;; Mouse
@@ -145,7 +151,7 @@
 (defun keydown (instance scancode)
   (declare (ignorable instance))
   (scancode-case scancode
-    (:scancode-space (reset instance))))
+    (:scancode-space (sketch::prepare instance))))
 
 (defun keyup (instance scancode)
   (declare (ignorable instance))
@@ -162,11 +168,5 @@
     (t nil)))
 
 
-;;;; Make
-(defun make-demo ()
-  (make-sketch 'demo
-    (mouse (cons nil nil))))
-
-
 ;;;; Run
-; (defparameter *demo* (make-demo))
+; (defparameter *demo* (make-instance 'demo))

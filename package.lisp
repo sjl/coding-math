@@ -6,7 +6,6 @@
     #:coding-math.quickutils)
   (:export
     #:in-context
-    #:make-sketch
     #:scancode-case
     #:with-vals
     #:zap%
@@ -205,7 +204,13 @@
     #:vec3-div #:vec3-div!
     #:vec3-lerp
     #:with-vec3
-    #:with-vec3s))
+    #:with-vec3s
+    #:with-vec3-slots
+    #:vec3-dot
+    #:vec3-cross
+    #:vec3-angle-between
+    #:vec3-normalized
+    ))
 
 (defpackage #:coding-math.3d.coordinates
   (:use
@@ -217,6 +222,7 @@
   (:export
     #:cartesian-to-cylindrical
     #:cylindrical-to-cartesian
+    #:cylindrical-to-cartesian-cga
     ))
 
 (defpackage #:coding-math.3d.demo

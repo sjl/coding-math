@@ -5,7 +5,7 @@
 
 
 ;;;; Constants
-(defparameter tau (* pi 2))
+(defparameter tau (coerce (* pi 2) 'single-float))
 
 
 ;; Basics

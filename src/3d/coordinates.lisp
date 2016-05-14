@@ -27,3 +27,16 @@
                (atan z x) ; a
                y))) ; h
 
+
+(defmacro with-cga (bindings vec &body body)
+  (once-only (vec)
+    `(let ((,(first bindings) (aref ,vec 0))
+           (,(second bindings) (aref ,vec 1))
+           (,(third bindings) (aref ,vec 2)))
+       ,@body)))
+
+(defun cylindrical-to-cartesian-cga (coords)
+  (with-cga (radius azimuth height) coords
+    (sb-cga:vec (* radius (cos azimuth)) ; x
+                height ; y
+                (* radius (sin azimuth))))) ; z
