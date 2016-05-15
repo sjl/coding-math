@@ -10,6 +10,7 @@
   :depends-on (#:defstar
                #:optima
                #:sketch
+               #:sb-cga
                #:trivial-types
                #:cl-arrows
                #:fare-quasiquote-optima

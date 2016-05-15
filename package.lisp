@@ -187,34 +187,22 @@
 (defpackage #:coding-math.3d.vectors
   (:use
     #:cl
+    #:sb-cga
     #:coding-math.math
     #:coding-math.utils
     #:coding-math.quickutils)
   (:export
-    #:vec3
-    #:vec3-x
-    #:vec3-y
-    #:vec3-z
-    #:make-vec3
-    #:make-random-vec3
-    #:vec3-magnitude
-    #:vec3-add #:vec3-add!
-    #:vec3-sub #:vec3-sub!
-    #:vec3-mul #:vec3-mul!
-    #:vec3-div #:vec3-div!
-    #:vec3-lerp
-    #:with-vec3
-    #:with-vec3s
-    #:with-vec3-slots
-    #:vec3-dot
-    #:vec3-cross
-    #:vec3-angle-between
-    #:vec3-normalized
-    ))
+    #:vec-x #:vec-y #:vec-z
+    #:vec-r #:vec-a #:vec-h
+    #:random-vec
+    #:with-vec
+    #:with-vecs
+    #:angle-between))
 
 (defpackage #:coding-math.3d.coordinates
   (:use
     #:cl
+    #:sb-cga
     #:coding-math.math
     #:coding-math.3d.vectors
     #:coding-math.utils
@@ -235,5 +223,7 @@
     #:coding-math.math
     #:coding-math.3d.vectors
     #:coding-math.3d.coordinates
-    ))
+    )
+  (:import-from :sb-cga
+    :vec))
 

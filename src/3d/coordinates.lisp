@@ -16,27 +16,20 @@
 ;;;     TODO
 
 (defun cylindrical-to-cartesian (coords)
-  (with-vec3 (radius azimuth height) coords
-    (make-vec3 (* radius (cos azimuth)) ; x
-               height ; y
-               (* radius (sin azimuth))))) ; z
+  (with-vec (radius azimuth height) coords
+    (vec (* radius (cos azimuth)) ; x
+         height ; y
+         (* radius (sin azimuth))))) ; z
 
 (defun cartesian-to-cylindrical (coords)
-  (with-vec3 (x y z) coords
-    (make-vec3 (sqrt (+ (square x) (square z))) ; r
-               (atan z x) ; a
-               y))) ; h
+  (with-vec (x y z) coords
+    (vec (sqrt (+ (square x) (square z))) ; r
+         (atan z x) ; a
+         y))) ; h
 
-
-(defmacro with-cga (bindings vec &body body)
-  (once-only (vec)
-    `(let ((,(first bindings) (aref ,vec 0))
-           (,(second bindings) (aref ,vec 1))
-           (,(third bindings) (aref ,vec 2)))
-       ,@body)))
 
 (defun cylindrical-to-cartesian-cga (coords)
-  (with-cga (radius azimuth height) coords
-    (sb-cga:vec (* radius (cos azimuth)) ; x
-                height ; y
-                (* radius (sin azimuth))))) ; z
+  (with-vec (radius azimuth height) coords
+    (vec (* radius (cos azimuth)) ; x
+         height ; y
+         (* radius (sin azimuth))))) ; z

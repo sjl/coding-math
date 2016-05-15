@@ -2,6 +2,7 @@
 
 
 ;;;; Config
+(setf *bypass-cache* t)
 (defparameter *width* 600)
 (defparameter *height* 400)
 
@@ -62,14 +63,14 @@
                :with nshapes = 400
                :for i :from 0 :to nshapes
                :collect
-               (sb-cga:vec radius
-                           (* i (/ (* wraps tau) (1+ nshapes)))
-                           (+ #+no (random-around 0.0 50.0)
-                              (map-range 0.0 nshapes cyl-height (- cyl-height) i)))))
+               (vec radius
+                    (* i (/ (* wraps tau) (1+ nshapes)))
+                    (+ #+no (random-around 0.0 50.0)
+                       (map-range 0.0 nshapes cyl-height (- cyl-height) i)))))
      (model-to-world (sb-cga:translate* 0.0 0.0 cz))
      ;;
      (simple-pen (make-pen :fill (gray 0.1)))
-     (line-pen (make-pen :stroke (gray 0.1) :weight 2))
+     (line-pen (make-pen :stroke (gray 0.1) :weight 1))
      )
   (with-setup
     ; (setf angle-speed (map-range 0 *height* -0.08 0.08 (cdr mouse)))
@@ -83,11 +84,11 @@
             ; (incf (aref shape 2) y-speed)
             ; (wrapf (aref shape 2) (- cyl-height) cyl-height)
             #+debug (draw-point
-                   (sb-cga:transform-point
-                     (cylindrical-to-cartesian-cga shape)
-                     model-to-world)
-                   fl
-                   circle-size))
+                      (sb-cga:transform-point
+                        (cylindrical-to-cartesian-cga shape)
+                        model-to-world)
+                      fl
+                      circle-size))
       )
     (with-pen line-pen
       (loop :for (a b) :in (n-grams 2 shapes) :do
