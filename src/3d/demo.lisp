@@ -24,81 +24,78 @@
 
 
 ;;;; Draw
-(declaim (inline perspective apply-perspective))
-(defun perspective (focal-length z)
-  (/ focal-length (+ focal-length z)))
+(defun draw-point (screen size)
+  (circle (vec-x screen) (vec-y screen) size))
 
-(defun apply-perspective (vec focal-length)
-  (let ((p (perspective focal-length (aref vec 2))))
-    (sb-cga:transform-point vec (sb-cga:scale* p p p))))
-
-(defun draw-point (point focal-length size)
-  (let ((p (apply-perspective point focal-length)))
-    (in-context
-      (translate (aref p 0) (aref p 1))
-      (circle 0 0 size))))
-
-(defun draw-line (p1 p2 focal-length)
-  (let ((p1 (apply-perspective p1 focal-length))
-        (p2 (apply-perspective p2 focal-length)))
-    (line (aref p1 0) (aref p1 1)
-          (aref p2 0) (aref p2 1))))
+;;;; Structs
+(defstruct (point (:constructor make-point (world &optional screen)))
+  world screen)
 
 
 ;;;; Sketch
+(defun project (points focal-length)
+  (map nil
+       (lambda (p)
+         (with-vecs ((screen (point-screen p))
+                     (world (point-world p)))
+           (let ((scale (/ focal-length (+ focal-length world.z))))
+             (setf screen.x (* scale world.x)
+                   screen.y (* scale world.y)))))
+       points))
+
+(defun translate-model (points x y z)
+  (map nil (lambda (p)
+             (with-vec (p (point-world p))
+               (incf p.x x)
+               (incf p.y y)
+               (incf p.z z)))
+       points))
+
 (defsketch demo
-    ((width *width*)
-     (height *height*)
+    ((width *width*) (height *height*) (y-axis :down) (title "Coding Math")
      (mouse (cons 0 0))
+     ;; variables
      (fl 300.0)
-     (cz 700.0)
-     (radius 400.0)
-     (cyl-height 380.0)
-     (wraps 6)
-     (base-angle 0.0)
-     (angle-speed -0.02)
-     (circle-size 3)
-     (y-speed -0.5)
-     (shapes (loop
-               :with nshapes = 400
-               :for i :from 0 :to nshapes
-               :collect
-               (vec radius
-                    (* i (/ (* wraps tau) (1+ nshapes)))
-                    (+ #+no (random-around 0.0 50.0)
-                       (map-range 0.0 nshapes cyl-height (- cyl-height) i)))))
-     (model-to-world (sb-cga:translate* 0.0 0.0 cz))
-     ;;
+     (r 200.0)
+     (points
+       (make-array 8
+         :initial-contents
+         (list
+           (make-point (vec (- r) (- r) 1000.0) (zero-vec))
+           (make-point (vec     r (- r) 1000.0) (zero-vec))
+           (make-point (vec     r (- r)  500.0) (zero-vec))
+           (make-point (vec (- r) (- r)  500.0) (zero-vec))
+           (make-point (vec (- r)     r 1000.0) (zero-vec))
+           (make-point (vec     r     r 1000.0) (zero-vec))
+           (make-point (vec     r     r  500.0) (zero-vec))
+           (make-point (vec (- r)     r  500.0) (zero-vec)))))
+     (dirty t)
+     ;; pens
      (simple-pen (make-pen :fill (gray 0.1)))
      (line-pen (make-pen :stroke (gray 0.1) :weight 1))
      )
   (with-setup
-    ; (setf angle-speed (map-range 0 *height* -0.08 0.08 (cdr mouse)))
-    ; (setf shapes (sort shapes #'> :key (rcurry #'getf :z)))
-    (with-pen simple-pen
-      (loop :for shape :in shapes
-            :do
-            (setf (aref shape 0) (map-range 0.0 *width* 10 600 (car mouse)))
-            (incf (aref shape 1) angle-speed)
-            (incf (aref shape 2) (random-around 0.0 0.2))
-            ; (incf (aref shape 2) y-speed)
-            ; (wrapf (aref shape 2) (- cyl-height) cyl-height)
-            #+debug (draw-point
-                      (sb-cga:transform-point
-                        (cylindrical-to-cartesian-cga shape)
-                        model-to-world)
-                      fl
-                      circle-size))
-      )
-    (with-pen line-pen
-      (loop :for (a b) :in (n-grams 2 shapes) :do
-            (draw-line (sb-cga:transform-point
-                         (cylindrical-to-cartesian-cga a)
-                         model-to-world)
-                       (sb-cga:transform-point
-                         (cylindrical-to-cartesian-cga b)
-                         model-to-world)
-                       fl)))
+    (flet
+        ((draw-line (&rest vertices)
+           (loop :for (a b) ; lame way to close the loop...
+                 :in (n-grams 2 (append vertices (list (car vertices))))
+                 :do (with-vecs ((a (point-screen (aref points a)))
+                                 (b (point-screen (aref points b))))
+                       (line a.x a.y b.x b.y)))))
+      (when dirty
+        (setf dirty nil)
+        (project points fl))
+      (with-pen simple-pen
+        ; (loop :for p :across points
+        ;       :do (draw-point (point-screen p) 5))
+        nil)
+      (with-pen line-pen
+        (draw-line 0 1 2 3)
+        (draw-line 0 3 7 4)
+        (draw-line 1 2 6 5)
+        (draw-line 6 5 4 7)
+        nil
+        ))
     ;;
     ))
 
@@ -151,8 +148,18 @@
 ;;;; Keyboard
 (defun keydown (instance scancode)
   (declare (ignorable instance))
+  (setf (slot-value instance 'dirty) t)
   (scancode-case scancode
-    (:scancode-space (sketch::prepare instance))))
+    (:scancode-space (sketch::prepare instance))
+    ;;
+    (:scancode-left  (translate-model (slot-value instance 'points) -15 0 0))
+    (:scancode-right (translate-model (slot-value instance 'points) 15 0 0))
+    (:scancode-up    (translate-model (slot-value instance 'points) 0 -15 0))
+    (:scancode-down  (translate-model (slot-value instance 'points) 0 15 0))
+    (:scancode-s    (translate-model (slot-value instance 'points) 0 0 -15))
+    (:scancode-w  (translate-model (slot-value instance 'points) 0 0 15))
+    ;;
+    ))
 
 (defun keyup (instance scancode)
   (declare (ignorable instance))

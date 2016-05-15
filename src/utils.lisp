@@ -59,3 +59,36 @@
     (setf
       ,@(loop :for (slot val) :on bindings :by #'cddr
               :append (list slot val)))))
+
+
+;; snagged from squirl
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun symbolicate (&rest things)
+    "Concatenate together the names of some strings and symbols,
+producing a symbol in the current package."
+    (let ((name (make-string (reduce #'+ things
+                                     :key (compose #'length #'string)))))
+      (let ((index 0))
+        (dolist (thing things (values (intern name)))
+          (let ((x (string thing)))
+            (replace name x :start1 index)
+            (incf index (length x))))))))
+
+(macrolet
+    ((define-ensure-foo (place) ; Lisp macros are nice
+       `(defun ,(symbolicate "ENSURE-" place) (place &optional (default place))
+         (if (atom place) default (,place place)))))
+  (define-ensure-foo car)
+  (define-ensure-foo cadr))
+
+(defmacro with-place (conc-name (&rest slots) form &body body)
+  (let* ((sm-prefix (ensure-car conc-name))
+         (acc-prefix (ensure-cadr conc-name))
+         (*package* (symbol-package sm-prefix)))
+    `(with-accessors
+      ,(mapcar (lambda (v)
+                 (list (symbolicate sm-prefix (ensure-car v))
+                       (symbolicate acc-prefix (ensure-cadr v))))
+               slots)
+      ,form
+      ,@body)))

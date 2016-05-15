@@ -11,6 +11,10 @@
     #:zap%
     #:%
     #:setf-slots
+    #:symbolicate
+    #:ensure-car
+    #:ensure-cadr
+    #:with-place
     ))
 
 (defpackage #:coding-math.math
@@ -195,6 +199,7 @@
     #:vec-x #:vec-y #:vec-z
     #:vec-r #:vec-a #:vec-h
     #:random-vec
+    #:zero-vec
     #:with-vec
     #:with-vecs
     #:angle-between))
