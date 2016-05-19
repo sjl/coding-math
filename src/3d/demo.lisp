@@ -33,13 +33,42 @@
   world screen)
 
 
+;;;; Functions
+(defun rotate-x (angle points)
+  (let ((s (sin angle))
+        (c (cos angle)))
+    (map nil (lambda (p)
+               (with-vec (p (point-world p))
+                 (psetf p.y (- (* p.y c) (* p.z s))
+                        p.z (+ (* p.z c) (* p.y s)))))
+         points)))
+
+(defun rotate-y (angle points)
+  (let ((s (sin angle))
+        (c (cos angle)))
+    (map nil (lambda (p)
+               (with-vec (p (point-world p))
+                 (psetf p.x (- (* p.x c) (* p.z s))
+                        p.z (+ (* p.z c) (* p.x s)))))
+         points)))
+
+(defun rotate-z (angle points)
+  (let ((s (sin angle))
+        (c (cos angle)))
+    (map nil (lambda (p)
+               (with-vec (p (point-world p))
+                 (psetf p.x (- (* p.x c) (* p.y s))
+                        p.y (+ (* p.y c) (* p.x s)))))
+         points)))
+
+
 ;;;; Sketch
-(defun project (points focal-length)
+(defun project (points focal-length center-z)
   (map nil
        (lambda (p)
          (with-vecs ((screen (point-screen p))
                      (world (point-world p)))
-           (let ((scale (/ focal-length (+ focal-length world.z))))
+           (let ((scale (/ focal-length (+ focal-length world.z center-z))))
              (setf screen.x (* scale world.x)
                    screen.y (* scale world.y)))))
        points))
@@ -52,25 +81,26 @@
                (incf p.z z)))
        points))
 
+
 (defsketch demo
     ((width *width*) (height *height*) (y-axis :up) (title "Coding Math")
      (mouse (cons 0 0))
      ;; variables
      (fl 300.0)
      (r 200.0)
+     (center-z 1500.0)
      (points
        (make-array 8
          :initial-contents
          (list
-           (make-point (vec (- r) (- r) 1000.0) (zero-vec))
-           (make-point (vec     r (- r) 1000.0) (zero-vec))
-           (make-point (vec     r (- r)  500.0) (zero-vec))
-           (make-point (vec (- r) (- r)  500.0) (zero-vec))
-           (make-point (vec (- r)     r 1000.0) (zero-vec))
-           (make-point (vec     r     r 1000.0) (zero-vec))
-           (make-point (vec     r     r  500.0) (zero-vec))
-           (make-point (vec (- r)     r  500.0) (zero-vec)))))
-     (dirty t)
+           (make-point (vec (- r) (- r)     r) (zero-vec))
+           (make-point (vec     r (- r)     r) (zero-vec))
+           (make-point (vec     r (- r) (- r)) (zero-vec))
+           (make-point (vec (- r) (- r) (- r)) (zero-vec))
+           (make-point (vec (- r)     r     r) (zero-vec))
+           (make-point (vec     r     r     r) (zero-vec))
+           (make-point (vec     r     r (- r)) (zero-vec))
+           (make-point (vec (- r)     r (- r)) (zero-vec)))))
      ;; pens
      (simple-pen (make-pen :fill (gray 0.1)))
      (line-pen (make-pen :stroke (gray 0.1) :weight 1))
@@ -83,9 +113,9 @@
                  :do (with-vecs ((a (point-screen (aref points a)))
                                  (b (point-screen (aref points b))))
                        (line a.x a.y b.x b.y)))))
-      (when dirty
-        (setf dirty nil)
-        (project points fl))
+      (project points fl center-z)
+      (when *shift* (text "shift!" 100 100))
+      (when *control* (text "control!" 100 120))
       (with-pen simple-pen
         ; (loop :for p :across points
         ;       :do (draw-point (point-screen p) 5))
@@ -147,26 +177,50 @@
 
 
 ;;;; Keyboard
+(defvar *shift* nil)
+(defvar *control* nil)
+(defvar *command* nil)
+(defvar *option* nil)
+
+
 (defun keydown (instance scancode)
   (declare (ignorable instance))
-  (setf (slot-value instance 'dirty) t)
   (scancode-case scancode
     (:scancode-space (sketch::prepare instance))
+    (:scancode-lshift (setf *shift* t))
+    (:scancode-lctrl (setf *control* t))
+    (:scancode-lgui (setf *command* t))
+    (:scancode-lalt (setf *option* t))
     ;;
-    (:scancode-left  (translate-model (slot-value instance 'points) -15 0 0))
-    (:scancode-right (translate-model (slot-value instance 'points) 15 0 0))
-    (:scancode-up    (translate-model (slot-value instance 'points) 0 -15 0))
-    (:scancode-down  (translate-model (slot-value instance 'points) 0 15 0))
-    (:scancode-s    (translate-model (slot-value instance 'points) 0 0 -15))
-    (:scancode-w  (translate-model (slot-value instance 'points) 0 0 15))
+    (:scancode-left  (if *shift*
+                       (rotate-y -0.05 (demo-points instance))
+                       (translate-model (slot-value instance 'points) -15 0 0)))
+    (:scancode-right (if *shift*
+                       (rotate-y 0.05 (demo-points instance))
+                       (translate-model (slot-value instance 'points) 15 0 0)))
+    (:scancode-up    (if *shift*
+                       (rotate-x -0.05 (demo-points instance))
+                       (translate-model (slot-value instance 'points) 0 15 0)))
+    (:scancode-down  (if *shift*
+                       (rotate-x 0.05 (demo-points instance))
+                       (translate-model (slot-value instance 'points) 0 -15 0)))
+    (:scancode-s     (if *shift*
+                       (rotate-z -0.05 (demo-points instance))
+                       (translate-model (slot-value instance 'points) 0 0 -15)))
+    (:scancode-w     (if *shift*
+                       (rotate-z 0.05 (demo-points instance))
+                       (translate-model (slot-value instance 'points) 0 0 15)))
     ;;
     ))
 
 (defun keyup (instance scancode)
   (declare (ignorable instance))
   (scancode-case scancode
-    (:scancode-space
-     nil)))
+    (:scancode-lshift (setf *shift* nil))
+    (:scancode-lctrl (setf *control* nil))
+    (:scancode-lgui (setf *command* nil))
+    (:scancode-lalt (setf *option* nil))
+    (:scancode-space nil)))
 
 
 (defmethod kit.sdl2:keyboard-event ((instance demo) state timestamp repeatp keysym)

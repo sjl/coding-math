@@ -8,6 +8,13 @@
 (defparameter *center-y* (/ *height* 2))
 
 
+;;;; Utils
+(defmacro with-setup (&body body)
+  `(with-fps
+    (background (gray 1))
+    ,@body))
+
+
 ;;;; Sketch
 (defun draw-particle (p)
   (circle (particle-x p) (particle-y p) (particle-radius p)))
@@ -36,75 +43,49 @@
 
 
 (defsketch cm
-    ((mouse (make-vec 0 0))
-     (width *width*)
-     (height *height*)
-     (dragging)
-     (p1 (make-particle (random *width*) (random *height*) :radius 10))
-     (c1 (make-particle (random *width*) (random *height*) :radius 8))
-     (c2 (make-particle (random *width*) (random *height*) :radius 8))
-     (p2 (make-particle (random *width*) (random *height*) :radius 10))
-     (handles (list p1 c1 c2 p2))
-     (control-pen (make-pen :stroke (gray 0.1)
-                            :weight 1
-                            :fill (rgb 0.5 0.5 0.9)))
-     (end-pen (make-pen :stroke (gray 0.1)
-                        :weight 1
-                        :fill (gray 0.5)))
+    ((width *width*) (height *height*) (y-axis :down) (title "Coding Math 2D")
+     (mouse (cons 0 0))
+     ;; Data
+     (o (make-particle 0 0 :radius 5))
+     (p (make-particle 150.0 40.0 :radius 10))
+     (delta -0.05)
+     ;; Pens
+     (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (line-pen (make-pen :stroke (gray 0.7)))
-     (curve-pen (make-pen :stroke (rgb 0.7 0.2 0.2)))
      )
-  (with-fps
-    (background (gray 1))
+  (with-setup
     ;;
-    (with-pen line-pen
-      (draw-line (particle-pos p1)
-                 (particle-pos c1))
-      (draw-line (particle-pos c1)
-                 (particle-pos c2))
-      (draw-line (particle-pos c2)
-                 (particle-pos p2)))
-    (with-pen end-pen
-      (draw-particle p1)
-      (draw-particle p2))
-    (with-pen control-pen
-      (draw-particle c1)
-      (draw-particle c2))
-    (with-pen curve-pen
-      (with-vecs ((p1x p1y) (particle-pos p1)
-                  (c1x c1y) (particle-pos c1)
-                  (c2x c2y) (particle-pos c2)
-                  (p2x p2y) (particle-pos p2))
-        (bezier p1x p1y c1x c1y c2x c2y p2x p2y))
-      )
+    (in-context
+      (translate (/ *width* 2) (/ *height* 2))
+      (with-pen particle-pen
+        (draw-particle o)
+        (draw-particle p))
+      (let ((sin (sin delta))
+            (cos (cos delta)))
+        (psetf (particle-x p)
+               (- (* (particle-x p) cos)
+                  (* (particle-y p) sin))
+               (particle-y p)
+               (+ (* (particle-y p) cos)
+                  (* (particle-x p) sin)))))
     ;;
-    ))
+    )
+  )
 
 
 ;;;; Mouse
 (defun mousemove (instance x y)
   (with-slots (dragging mouse) instance
-    (setf (vec-x mouse) x)
-    (setf (vec-y mouse) y)
+    (setf (car mouse) x)
+    (setf (cdr mouse) y)
     ;;
-    (when dragging
-      (destructuring-bind (thing . offset) dragging
-        (setf (drag-location-vec thing)
-              (vec-add mouse offset)))
-      )
     ;;
     )
   )
 
+
 (defun mousedown-left (instance x y)
   (declare (ignorable instance x y))
-  (with-slots (dragging mouse handles) instance
-    (loop :for handle :in handles
-          :when (drag-requested-p handle (make-vec x y))
-          :do (setf dragging
-                    (cons handle
-                          (vec-sub (drag-location-vec handle)
-                                   mouse)))))
   )
 
 (defun mousedown-right (instance x y)
@@ -113,7 +94,6 @@
 
 (defun mouseup-left (instance x y)
   (declare (ignorable instance x y))
-  (setf (slot-value instance 'dragging) nil)
   )
 
 (defun mouseup-right (instance x y)
@@ -162,4 +142,3 @@
 
 ;;;; Run
 ; (defparameter *demo* (make-instance 'cm))
-
