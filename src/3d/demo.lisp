@@ -27,6 +27,7 @@
 (defun draw-point (screen size)
   (circle (vec-x screen) (vec-y screen) size))
 
+
 ;;;; Structs
 (defstruct (point (:constructor make-point (world &optional screen)))
   world screen)
@@ -52,7 +53,7 @@
        points))
 
 (defsketch demo
-    ((width *width*) (height *height*) (y-axis :down) (title "Coding Math")
+    ((width *width*) (height *height*) (y-axis :up) (title "Coding Math")
      (mouse (cons 0 0))
      ;; variables
      (fl 300.0)
