@@ -7,6 +7,11 @@
 (defparameter *center-x* (/ *width* 2))
 (defparameter *center-y* (/ *height* 2))
 
+(defvar *shift* nil)
+(defvar *control* nil)
+(defvar *command* nil)
+(defvar *option* nil)
+
 
 ;;;; Utils
 (defmacro with-setup (&body body)
@@ -43,31 +48,29 @@
 
 
 (defsketch cm
-    ((width *width*) (height *height*) (y-axis :down) (title "Coding Math 2D")
-     (mouse (cons 0 0))
+    ((width *width*) (height *height*) (y-axis :up) (title "Coding Math 2D")
+     (mouse (make-vec 0 0))
      ;; Data
-     (o (make-particle 0 0 :radius 5))
-     (p (make-particle 150.0 40.0 :radius 10))
-     (delta -0.05)
+     (p (make-particle 0.0 (random height) :radius 10))
+     (target (make-vec width (random height)))
+     (ease 0.1)
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
-     (line-pen (make-pen :stroke (gray 0.7)))
+     (line-pen (make-pen :curve-steps 100
+                         :stroke (gray 0.7)))
      )
   (with-setup
     ;;
     (in-context
-      (translate (/ *width* 2) (/ *height* 2))
-      (with-pen particle-pen
-        (draw-particle o)
-        (draw-particle p))
-      (let ((sin (sin delta))
-            (cos (cos delta)))
-        (psetf (particle-x p)
-               (- (* (particle-x p) cos)
-                  (* (particle-y p) sin))
-               (particle-y p)
-               (+ (* (particle-y p) cos)
-                  (* (particle-x p) sin)))))
+      (draw-axes *width* *height*)
+      (let* ((distance (vec-sub target (particle-pos p)))
+             (velocity (vec-mul distance ease)))
+        (setf (particle-vel p) velocity)
+        (particle-update! p)
+        (with-pen particle-pen
+          (draw-particle p)))
+
+      )
     ;;
     )
   )
@@ -75,10 +78,10 @@
 
 ;;;; Mouse
 (defun mousemove (instance x y)
-  (with-slots (dragging mouse) instance
-    (setf (car mouse) x)
-    (setf (cdr mouse) y)
+  (with-slots (target mouse) instance
+    (setf mouse (make-vec x (- *height* y)))
     ;;
+    (setf target mouse)
     ;;
     )
   )
@@ -123,13 +126,23 @@
 (defun keydown (instance scancode)
   (declare (ignorable instance))
   (scancode-case scancode
-    (:scancode-space (sketch::prepare instance))))
+    (:scancode-space (sketch::prepare instance))
+    (:scancode-lshift (setf *shift* t))
+    (:scancode-lctrl (setf *control* t))
+    (:scancode-lgui (setf *command* t))
+    (:scancode-lalt (setf *option* t))
+    ;;
+    ;;
+    ))
 
 (defun keyup (instance scancode)
   (declare (ignorable instance))
   (scancode-case scancode
-    (:scancode-space
-     nil)))
+    (:scancode-lshift (setf *shift* nil))
+    (:scancode-lctrl (setf *control* nil))
+    (:scancode-lgui (setf *command* nil))
+    (:scancode-lalt (setf *option* nil))
+    (:scancode-space nil)))
 
 
 (defmethod kit.sdl2:keyboard-event ((instance cm) state timestamp repeatp keysym)

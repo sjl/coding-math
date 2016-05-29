@@ -10,6 +10,11 @@
 (defparameter *center-y* (/ *height* 2))
 
 
+(defvar *shift* nil)
+(defvar *control* nil)
+(defvar *command* nil)
+(defvar *option* nil)
+
 ;;;; Utils
 (defmacro with-centered-coords (&body body)
   `(in-context
@@ -177,12 +182,6 @@
 
 
 ;;;; Keyboard
-(defvar *shift* nil)
-(defvar *control* nil)
-(defvar *command* nil)
-(defvar *option* nil)
-
-
 (defun keydown (instance scancode)
   (declare (ignorable instance))
   (scancode-case scancode

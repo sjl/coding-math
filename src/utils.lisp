@@ -61,6 +61,48 @@
               :append (list slot val)))))
 
 
+(defun juxt (&rest fns)
+  (lambda (&rest args)
+    (mapcar (rcurry #'apply args) fns)))
+
+
+;;;; Handy drawing functions
+(defparameter axis-pen (make-pen :stroke (gray 0.7)))
+
+(defun draw-axes (width height)
+  (with-pen axis-pen
+    (line (- width) 0 width 0)
+    (line 0 (- height) 0 height)))
+
+
+(defun graph-function
+    (fn &key
+     (fn-start 0.0) (fn-end 1.0)
+     (fn-min 0.0) (fn-max 1.0)
+     (graph-start 0.0) (graph-end 1.0)
+     (graph-min 0.0) (graph-max 1.0))
+  (let ((steps (sketch::pen-curve-steps (sketch::env-pen sketch::*env*))))
+    (labels
+        ((norm (min max val)
+           (/ (- val min)
+              (- max min)))
+         (lerp (from to n)
+           (+ from (* n (- to from))))
+         (map-range (source-from source-to dest-from dest-to source-val)
+           (lerp dest-from dest-to
+                 (norm source-from source-to source-val))))
+      (apply #'polyline
+             (mapcan (juxt
+                       (lambda (x)
+                         (map-range fn-start fn-end graph-start graph-end x))
+                       (lambda (x)
+                         (map-range fn-min fn-max graph-min graph-max
+                                    (funcall fn x))))
+                     (iota (1+ steps)
+                           :start fn-start
+                           :step (/ (- fn-end fn-start) steps)))))))
+
+
 ;; snagged from squirl
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun symbolicate (&rest things)

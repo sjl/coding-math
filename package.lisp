@@ -15,7 +15,9 @@
     #:ensure-car
     #:ensure-cadr
     #:with-place
-    ))
+    #:draw-axes
+    #:juxt
+    #:graph-function))
 
 (defpackage #:coding-math.math
   (:use
