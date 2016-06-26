@@ -156,3 +156,20 @@
 
 (defmethod (setf drag-location-vec) (new-value (p particle))
   (setf (particle-pos p) new-value))
+
+
+(defun particle-ease-to! (particle target &optional (ease 0.1) (always nil))
+  "Ease this particle toward the target vector.
+
+  Returns whether or not the easing still needs to continue.
+
+  "
+  (with-slots (pos vel) particle
+    (let* ((new-vel (vec-mul (vec-sub target pos) ease))
+           (done (and (not always)
+                      (< (abs (vec-x new-vel)) 0.0001)
+                      (< (abs (vec-y new-vel)) 0.0001))))
+      (if done
+        (setf pos target)
+        (setf vel new-vel))
+      (not done))))

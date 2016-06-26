@@ -142,6 +142,7 @@
     #:particle-gravitate-to!
     #:particle-gravitate-add!
     #:particle-gravitate-remove!
+    #:particle-ease-to!
     #:particle-spring-to!
     #:particle-spring-add!
     #:particle-spring-remove!))
