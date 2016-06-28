@@ -25,6 +25,7 @@
     :components ((:file "utils")
                  (:file "math")
                  (:file "fps")
+                 (:file "tween")
                  (:module "2d"
                   :serial t
                   :components ((:file "vectors")

@@ -66,6 +66,25 @@
     (mapcar (rcurry #'apply args) fns)))
 
 
+(defmacro with-elapsed ((timestamp-place elapsed-symbol)
+                        &body body &environment env)
+  (multiple-value-bind (temps exprs stores store-expr access-expr)
+      (get-setf-expansion timestamp-place env)
+    (with-gensyms (previous-time current-time)
+      `(let* ((,current-time (get-internal-real-time)) ; get current time
+              ,@(mapcar #'list temps exprs) ; grab prev timestamp from place
+              (,previous-time ,access-expr)
+              (,(car stores) ,current-time))
+        ,store-expr ; update timestamp place
+        (let ((,elapsed-symbol ; bind lexical elapsed var
+               (if (null ,previous-time)
+                 0.0
+                 (/ (- ,current-time ,previous-time)
+                    internal-time-units-per-second))))
+          ,@body)))))
+
+
+
 ;;;; Handy drawing functions
 (defparameter axis-pen (make-pen :stroke (gray 0.7)))
 

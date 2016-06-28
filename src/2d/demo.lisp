@@ -42,75 +42,47 @@
 (defun draw-point (p)
   (point (vec-x p) (vec-y p)))
 
+
 (defun oob-p (p &optional (r 0.0))
   (or (outsidep (- 0 r) (+ *width* r) (vec-x p))
       (outsidep (- 0 r) (+ *height* r) (vec-y p))))
 
-(defparameter *wheel-rim-pen* (make-pen :weight 10 :stroke (rgb 0.5 0 0)))
-(defparameter *wheel-point-pen* (make-pen :fill (rgb 0.8 0 0)))
 
-(defun draw-wheel (angle)
-  (in-context
-    (translate *center-x* *center-y*)
-    (rotate angle)
-    (with-pen *wheel-rim-pen*
-      (circle 0 0 100))
-    (with-pen *wheel-point-pen*
-      (ngon 3 0 80 30 30 (degrees (/ tau 4)))
-      (rect -5 0 10 80)
-      (rotate (degrees (/ tau 8)))
-      (rect -5 -90 10 80)
-      (rotate (degrees (- (/ tau 4))))
-      (rect -5 -90 10 80))))
-
-
-(defun ease (rate current goal)
-  (+ current (* rate (- goal current))))
-
-(defmacro easef (rate place goal)
-  `(zap% ,place #'ease ,rate % ,goal))
 
 (defsketch cm
-    ((width *width*) (height *height*) (y-axis :up) (title "Coding Math 2D")
+    ((width *width*) (height *height*) (y-axis :down) (title "Coding Math 2D")
      (mouse (make-vec 0 0))
      ;; Data
-     (p (make-particle 0.0 (random height) :radius 10))
-     (points (loop :repeat 50
-                   :collect (make-particle 0.0 0.0 :radius 5)))
-     (target (make-vec width (random height)))
-     (easing nil)
-     (wheel-angle 0.0)
+     (start (make-vec 100 100))
+     (current start)
+     (target nil)
+     (amount nil)
+     (ease-time 0.0)
+     (duration 2.0)
+     (timestamp nil)
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
-     (line-pen (make-pen :curve-steps 100
-                         :stroke (gray 0.7)))
+     (line-pen (make-pen :curve-steps 40 :stroke (gray 0.7)))
      )
   (with-setup
     ;;
     (in-context
       (draw-axes *width* *height*)
-      (easef 0.05 wheel-angle
-             (degrees (map-range 0 *width*
-                                 (/ tau 2) (- (/ tau 2))
-                                 (vec-x mouse))))
-      (draw-wheel wheel-angle)
-      (when easing
-        ; (text "easing" 0 100)
-        ; (text (format nil "points: ~D" (length points)) 0 100)
-        (setf easing (particle-ease-to! p target 0.2))
-        (particle-update! p))
+      (with-elapsed (timestamp elapsed)
+        (when ease-time
+          (incf ease-time elapsed)))
+      (when target
+        (with-vecs ((sx sy) start
+                    (ax ay) amount)
+          (setf current
+                (make-vec (tween-quadratic-out sx ax duration ease-time)
+                          (tween-quadratic-out sy ay duration ease-time)))))
+      (when (> ease-time duration)
+        (setf target nil
+              amount nil
+              ease-time 0.0))
       (with-pen particle-pen
-        (draw-particle p)
-        (do ((previous p current)
-             (current (car points) (car remaining))
-             (remaining (cdr points) (cdr remaining)))
-            ((null current))
-          (particle-ease-to! current (particle-pos previous) 0.2 t)
-          (particle-update! current)
-          (draw-particle current)
-          ))
-
-      )
+        (draw-circle current)))
     ;;
     )
   )
@@ -118,11 +90,9 @@
 
 ;;;; Mouse
 (defun mousemove (instance x y)
-  (with-slots (target mouse easing) instance
+  (with-slots (mouse) instance
     (setf mouse (make-vec x (- *height* y)))
     ;;
-    (setf target mouse
-          easing t)
     ;;
     )
   )
@@ -130,7 +100,12 @@
 
 (defun mousedown-left (instance x y)
   (declare (ignorable instance x y))
-  )
+  (setf-slots instance
+              start current
+              current start
+              target (make-vec x y)
+              amount (vec-sub target start)
+              ease-time 0.0))
 
 (defun mousedown-right (instance x y)
   (declare (ignorable instance x y))

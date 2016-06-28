@@ -15,6 +15,7 @@
     #:ensure-car
     #:ensure-cadr
     #:with-place
+    #:with-elapsed
     #:draw-axes
     #:juxt
     #:graph-function))
@@ -58,6 +59,19 @@
   (:export
     #:with-fps
     #:draw-fps))
+
+(defpackage #:coding-math.tween
+  (:use
+    #:cl
+    #:coding-math.quickutils
+    #:coding-math.math
+    #:coding-math.utils)
+  (:export
+    #:tween-linear
+    #:tween-quadratic-in
+    #:tween-quadratic-out
+    #:tween-quadratic-inout
+    ))
 
 
 ;;;; 2D stuff
@@ -173,6 +187,7 @@
     #:coding-math.utils
     #:coding-math.fps
     #:coding-math.math
+    #:coding-math.tween
     #:coding-math.2d.vectors
     #:coding-math.2d.points
     #:coding-math.2d.hitboxes
@@ -183,6 +198,7 @@
     #:cl
     #:sketch
     #:coding-math.quickutils
+    #:coding-math.tween
     #:coding-math.2d.particles
     #:coding-math.2d.hitboxes
     #:coding-math.utils
@@ -229,6 +245,7 @@
     #:coding-math.utils
     #:coding-math.fps
     #:coding-math.math
+    #:coding-math.tween
     #:coding-math.3d.vectors
     #:coding-math.3d.coordinates
     )
