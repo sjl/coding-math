@@ -39,10 +39,21 @@
 
 (defmacro tween-places!
     ((tweening-function duration &key callback-progress callback-finished)
-     &rest places)
+     &rest places-and-targets)
+  "Tween `places-and-targets` over `duration` seconds with `tweening-function`
+
+      (tween-places! (#'tween-quadratic-in 1.5)
+        (vec-x location) (find-target :x)
+        (vec-y location) (find-target :y)
+        (color-alpha (slot-value shape 'color)) 0.0
+        ;...
+        )
+
+  "
   (once-only (duration tweening-function)
     `(progn
-      ,@(loop :for (place target . remaining) :on places :by #'cddr :collect
+      ,@(loop :for (place target . remaining) :on places-and-targets :by #'cddr
+              :collect
               `(tween-place! ,place ,target ,duration ,tweening-function
                 ,@(when (null remaining)
                     `(:callback-progress ,callback-progress
