@@ -48,18 +48,11 @@
       (outsidep (- 0 r) (+ *height* r) (vec-y p))))
 
 
-
 (defsketch cm
     ((width *width*) (height *height*) (y-axis :down) (title "Coding Math 2D")
      (mouse (make-vec 0 0))
      ;; Data
-     (start (make-vec 100 100))
-     (current start)
-     (target nil)
-     (amount nil)
-     (ease-time 0.0)
-     (duration 2.0)
-     (timestamp nil)
+     (current (make-vec 100 100))
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (line-pen (make-pen :curve-steps 40 :stroke (gray 0.7)))
@@ -68,19 +61,7 @@
     ;;
     (in-context
       (draw-axes *width* *height*)
-      (with-elapsed (timestamp elapsed)
-        (when ease-time
-          (incf ease-time elapsed)))
-      (when target
-        (with-vecs ((sx sy) start
-                    (ax ay) amount)
-          (setf current
-                (make-vec (tween-quadratic-out sx ax duration ease-time)
-                          (tween-quadratic-out sy ay duration ease-time)))))
-      (when (> ease-time duration)
-        (setf target nil
-              amount nil
-              ease-time 0.0))
+      (update-tweens!)
       (with-pen particle-pen
         (draw-circle current)))
     ;;
@@ -97,15 +78,25 @@
     )
   )
 
+(defun draw-time ()
+  (text (format nil "~d" (get-internal-real-time))
+        300 300))
 
 (defun mousedown-left (instance x y)
   (declare (ignorable instance x y))
-  (setf-slots instance
-              start current
-              current start
-              target (make-vec x y)
-              amount (vec-sub target start)
-              ease-time 0.0))
+  (with-slots (current) instance
+    (tween-places!
+        (#'tween-quadratic-out 2.0
+         :callback-progress #'draw-time
+         :callback-finished
+         (let ((x (vec-x current))
+               (y (vec-y current)))
+           (lambda ()
+             (tween-places! (#'tween-quadratic-in 2.0)
+               (vec-x current) x
+               (vec-y current) y))))
+      (vec-x current) x
+      (vec-y current) y)))
 
 (defun mousedown-right (instance x y)
   (declare (ignorable instance x y))
@@ -171,4 +162,3 @@
 
 ;;;; Run
 ; (defparameter *demo* (make-instance 'cm))
-

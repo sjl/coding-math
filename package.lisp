@@ -15,7 +15,6 @@
     #:ensure-car
     #:ensure-cadr
     #:with-place
-    #:with-elapsed
     #:draw-axes
     #:juxt
     #:graph-function))
@@ -71,6 +70,9 @@
     #:tween-quadratic-in
     #:tween-quadratic-out
     #:tween-quadratic-inout
+    #:tween-place!
+    #:tween-places!
+    #:update-tweens!
     ))
 
 
