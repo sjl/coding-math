@@ -65,14 +65,72 @@
 
 
 ;;;; Tweening Functions
+(defmacro with-normalized-time ((time-symbol duration-form) &body body)
+  `(let ((,time-symbol (/ ,time-symbol ,duration-form)))
+    ,@body))
+
+(defmacro tween-inout% (start amount duration time in out)
+  (once-only (start amount duration)
+    (with-gensyms (half)
+      `(with-normalized-time (,time (/ ,duration 2.0))
+        (let ((,half (/ ,amount 2.0)))
+          (if (< ,time 1.0)
+            (,in ,start ,half 1.0 ,time)
+            (,out (+ ,start ,half) ,half 1.0 (1- ,time))))))))
+
 (defun tween-linear (start amount duration time)
-  (let ((time (/ time duration)))
+  (with-normalized-time (time duration)
     (+ start (* amount time))))
 
+
 (defun tween-quadratic-in (start amount duration time)
-  (let ((time (/ time duration)))
+  (with-normalized-time (time duration)
     (+ start (* amount (* time time)))))
 
 (defun tween-quadratic-out (start amount duration time)
-  (let ((time (/ time duration)))
+  (with-normalized-time (time duration)
     (+ start (* (- amount) (* time (- time 2))))))
+
+(defun tween-quadratic-inout (start amount duration time)
+  (tween-inout% start amount duration time
+                tween-quadratic-in tween-quadratic-out))
+
+
+(defun tween-cubic-in (start amount duration time)
+  (with-normalized-time (time duration)
+    (+ start (* amount (expt time 3)))))
+
+(defun tween-cubic-out (start amount duration time)
+  (with-normalized-time (time duration)
+    (+ start (* amount (1+ (expt (1- time) 3))))))
+
+(defun tween-cubic-inout (start amount duration time)
+  (tween-inout% start amount duration time
+                tween-cubic-in tween-cubic-out))
+
+
+(defun tween-quartic-in (start amount duration time)
+  (with-normalized-time (time duration)
+    (+ start (* amount (expt time 4)))))
+
+(defun tween-quartic-out (start amount duration time)
+  (with-normalized-time (time duration)
+    (+ start (* (- amount) (1- (expt (1- time) 4))))))
+
+(defun tween-quartic-inout (start amount duration time)
+  (tween-inout% start amount duration time
+                tween-quartic-in tween-quartic-out))
+
+
+(defun tween-quintic-in (start amount duration time)
+  (with-normalized-time (time duration)
+    (+ start (* amount (expt time 5)))))
+
+(defun tween-quintic-out (start amount duration time)
+  (with-normalized-time (time duration)
+    (+ start (* amount (1+ (expt (1- time) 5))))))
+
+(defun tween-quintic-inout (start amount duration time)
+  (tween-inout% start amount duration time
+                tween-quintic-in tween-quintic-out))
+

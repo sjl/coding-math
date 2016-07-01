@@ -48,6 +48,17 @@
       (outsidep (- 0 r) (+ *height* r) (vec-y p))))
 
 
+(defmacro map-static (function-symbol &rest arguments)
+  `(progn
+     ,@(loop :for arg :in arguments :collect `(,function-symbol ,arg))))
+
+(defun graph-tween (tweening-function)
+  (graph-function (curry tweening-function 0.0 1.0 1.0)
+                  :fn-start 0.0 :fn-end 1.0
+                  :fn-min 0.0 :fn-max 1.0
+                  :graph-start 0 :graph-end *width*
+                  :graph-min *height* :graph-max 0))
+
 (defsketch cm
     ((width *width*) (height *height*) (y-axis :down) (title "Coding Math 2D")
      (mouse (make-vec 0 0))
@@ -56,11 +67,35 @@
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (line-pen (make-pen :curve-steps 40 :stroke (gray 0.7)))
+     (black-function-pen (make-pen :curve-steps 20 :stroke (rgb 0 0 0) :weight 1))
+     (red-function-pen (make-pen :curve-steps 40 :stroke (rgb 0.8 0 0) :weight 1))
+     (green-function-pen (make-pen :curve-steps 40 :stroke (rgb 0 0.8 0) :weight 1))
+     (blue-function-pen (make-pen :curve-steps 40 :stroke (rgb 0 0 0.8) :weight 1))
      )
   (with-setup
     ;;
     (in-context
       (draw-axes *width* *height*)
+      (with-pen black-function-pen
+        (graph-tween #'tween-linear))
+      (with-pen red-function-pen
+        (map-static graph-tween
+                    #'tween-quadratic-in
+                    #'tween-cubic-in
+                    #'tween-quartic-in
+                    #'tween-quintic-in))
+      (with-pen green-function-pen
+        (map-static graph-tween
+                    #'tween-quadratic-out
+                    #'tween-cubic-out
+                    #'tween-quartic-out
+                    #'tween-quintic-out))
+      (with-pen blue-function-pen
+        (map-static graph-tween
+                    #'tween-quadratic-inout
+                    #'tween-cubic-inout
+                    #'tween-quartic-inout
+                    #'tween-quintic-inout))
       (update-tweens!)
       (with-pen particle-pen
         (draw-circle current)))
@@ -86,15 +121,8 @@
   (declare (ignorable instance x y))
   (with-slots (current) instance
     (tween-places!
-        (#'tween-quadratic-out 2.0
-         :callback-progress #'draw-time
-         :callback-finished
-         (let ((x (vec-x current))
-               (y (vec-y current)))
-           (lambda ()
-             (tween-places! (#'tween-quadratic-in 2.0)
-               (vec-x current) x
-               (vec-y current) y))))
+        (#'tween-quadratic-inout 10.0
+         :callback-progress #'draw-time)
       (vec-x current) x
       (vec-y current) y)))
 

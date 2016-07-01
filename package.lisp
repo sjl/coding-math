@@ -70,6 +70,15 @@
     #:tween-quadratic-in
     #:tween-quadratic-out
     #:tween-quadratic-inout
+    #:tween-cubic-in
+    #:tween-cubic-out
+    #:tween-cubic-inout
+    #:tween-quartic-in
+    #:tween-quartic-out
+    #:tween-quartic-inout
+    #:tween-quintic-in
+    #:tween-quintic-out
+    #:tween-quintic-inout
     #:tween-place!
     #:tween-places!
     #:update-tweens!
