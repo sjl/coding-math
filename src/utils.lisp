@@ -67,7 +67,7 @@
 
 
 ;;;; Handy drawing functions
-(defparameter axis-pen (make-pen :stroke (gray 0.7)))
+(defparameter axis-pen (make-pen :stroke (gray 0.7) :weight 2))
 
 (defun draw-axes (width height)
   (with-pen axis-pen

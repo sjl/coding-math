@@ -32,6 +32,7 @@
                                (:file "hitboxes")
                                (:file "particles")
                                (:file "points")
+                               (:file "lines")
                                (:file "demo")
                                (:file "ballistics")))
                  (:module "3d"

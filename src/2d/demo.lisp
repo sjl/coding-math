@@ -48,57 +48,78 @@
       (outsidep (- 0 r) (+ *height* r) (vec-y p))))
 
 
-(defmacro map-static (function-symbol &rest arguments)
-  `(progn
-     ,@(loop :for arg :in arguments :collect `(,function-symbol ,arg))))
-
-(defun graph-tween (tweening-function)
-  (graph-function (curry tweening-function 0.0 1.0 1.0)
-                  :fn-start 0.0 :fn-end 1.0
-                  :fn-min 0.0 :fn-max 1.0
-                  :graph-start 0 :graph-end *width*
-                  :graph-min *height* :graph-max 0))
-
 (defsketch cm
     ((width *width*) (height *height*) (y-axis :down) (title "Coding Math 2D")
      (mouse (make-vec 0 0))
      ;; Data
-     (current (make-vec 100 100))
+     (m1 (random-range -5 5))
+     (m2 (random-range -5 5))
+     (b1 (random-range -5 5))
+     (b2 (random-range -5 5))
+     (x11 (random-range -5 5))
+     (y11 (random-range -5 5))
+     (x12 (random-range -5 5))
+     (y12 (random-range -5 5))
+     (x21 (random-range -5 5))
+     (y21 (random-range -5 5))
+     (x22 (random-range -5 5))
+     (y22 (random-range -5 5))
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
-     (line-pen (make-pen :curve-steps 40 :stroke (gray 0.7)))
-     (black-function-pen (make-pen :curve-steps 20 :stroke (rgb 0 0 0) :weight 1))
-     (red-function-pen (make-pen :curve-steps 40 :stroke (rgb 0.8 0 0) :weight 1))
-     (green-function-pen (make-pen :curve-steps 40 :stroke (rgb 0 0.8 0) :weight 1))
-     (blue-function-pen (make-pen :curve-steps 40 :stroke (rgb 0 0 0.8) :weight 1))
+     (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
+     (red-pen (make-pen :stroke (rgb 0.6 0 0) :fill (rgb 0.9 0 0) :weight 1 :curve-steps 50))
+     (green-pen (make-pen :stroke (rgb 0 0.6 0) :fill (rgb 0 0.9 0) :weight 1 :curve-steps 50))
+     (blue-pen (make-pen :stroke (rgb 0 0 0.6) :fill (rgb 0 0 0.9) :weight 1 :curve-steps 50))
      )
   (with-setup
     ;;
     (in-context
+      (translate *center-x* *center-y*)
       (draw-axes *width* *height*)
-      (with-pen black-function-pen
-        (graph-tween #'tween-linear))
-      (with-pen red-function-pen
-        (map-static graph-tween
-                    #'tween-quadratic-in
-                    #'tween-cubic-in
-                    #'tween-quartic-in
-                    #'tween-quintic-in))
-      (with-pen green-function-pen
-        (map-static graph-tween
-                    #'tween-quadratic-out
-                    #'tween-cubic-out
-                    #'tween-quartic-out
-                    #'tween-quintic-out))
-      (with-pen blue-function-pen
-        (map-static graph-tween
-                    #'tween-quadratic-inout
-                    #'tween-cubic-inout
-                    #'tween-quartic-inout
-                    #'tween-quintic-inout))
-      (update-tweens!)
-      (with-pen particle-pen
-        (draw-circle current)))
+      (flet ((map-to-screen (x y)
+               (values (map-range -10.0 10.0 (- *center-x*) *center-x* x)
+                       (map-range -10.0 10.0 (- *center-y*) *center-y* y)))
+             (valid-line-p (x1 y1 x2 y2)
+               (not (and (= x1 x2)
+                         (= y1 y2))))
+             (g (fn)
+               (graph-function
+                 fn
+                 :fn-start -10 :fn-end 10
+                 :fn-min -10 :fn-max 10
+                 :graph-start (- *center-x*) :graph-end *center-x*
+                 :graph-min (- *center-y*) :graph-max *center-y*)))
+        (with-pen green-pen
+          (g (lambda (x) (+ (* m1 x) b1)))
+          (g (lambda (x) (+ (* m2 x) b2)))
+          (multiple-value-bind (x y)
+              (mxb-intersection-point m1 b1 m2 b2)
+            (when x
+              (draw-circle (multiple-value-call #'make-vec
+                             (map-to-screen x y))
+                           6))))
+        (when (and (valid-line-p x11 y11 x12 y12)
+                   (valid-line-p x21 y21 x22 y22))
+          (with-pen red-pen
+            (multiple-value-call #'line
+              (map-to-screen x11 y11)
+              (map-to-screen x12 y12))
+            (multiple-value-call #'line
+              (map-to-screen x21 y21)
+              (map-to-screen x22 y22))
+            (draw-circle (multiple-value-call #'make-vec (map-to-screen x11 y11)) 3)
+            (draw-circle (multiple-value-call #'make-vec (map-to-screen x12 y12)) 3)
+            (draw-circle (multiple-value-call #'make-vec (map-to-screen x21 y21)) 3)
+            (draw-circle (multiple-value-call #'make-vec (map-to-screen x22 y22)) 3)
+            (multiple-value-bind (x y)
+                (xys-intersection-point x11 y11 x12 y12 x21 y21 x22 y22)
+              (when x
+                (draw-circle (multiple-value-call #'make-vec
+                               (map-to-screen x y))
+                             6)))
+            ))
+        )
+      )
     ;;
     )
   )
@@ -118,13 +139,7 @@
         300 300))
 
 (defun mousedown-left (instance x y)
-  (declare (ignorable instance x y))
-  (with-slots (current) instance
-    (tween-places!
-        (#'tween-quadratic-inout 10.0
-         :callback-progress #'draw-time)
-      (vec-x current) x
-      (vec-y current) y)))
+  (declare (ignorable instance x y)))
 
 (defun mousedown-right (instance x y)
   (declare (ignorable instance x y))

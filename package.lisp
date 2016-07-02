@@ -189,6 +189,26 @@
     #:multicurve
     ))
 
+(defpackage #:coding-math.2d.lines
+  (:use
+    #:cl
+    #:sketch
+    #:coding-math.math
+    #:coding-math.2d.vectors
+    #:coding-math.quickutils
+    #:coding-math.utils)
+  (:export
+    #:std-intersection-point
+    #:mxb-intersection-point
+    #:xys-intersection-point
+    #:xys-to-mxb
+    #:xys-to-std
+    #:std-to-xys
+    #:std-to-mxb
+    #:mxb-to-xys
+    #:mxb-to-std
+    ))
+
 
 (defpackage #:coding-math.2d.demo
   (:use
@@ -201,6 +221,7 @@
     #:coding-math.tween
     #:coding-math.2d.vectors
     #:coding-math.2d.points
+    #:coding-math.2d.lines
     #:coding-math.2d.hitboxes
     #:coding-math.2d.particles))
 
