@@ -80,3 +80,16 @@
   (multiple-value-call #'std-intersection-point
                        (mxb-to-std slope1 intercept1)
                        (mxb-to-std slope2 intercept2)))
+
+(defun xys-segments-intersection-point (x11 y11 x12 y12 x21 y21 x22 y22)
+  (multiple-value-bind (x y)
+      (xys-intersection-point x11 y11 x12 y12 x21 y21 x22 y22)
+    (cond
+      ((null x)
+       (values)) ; parallel/colinear
+      ((or (outsidep x11 x12 x)
+           (outsidep x21 x22 x)
+           (outsidep y11 y12 y)
+           (outsidep y21 y22 y))
+       (values)) ; intersection outside segment(s)
+      (t (values x y)))))

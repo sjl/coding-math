@@ -1,5 +1,6 @@
 (in-package #:coding-math.utils)
 
+
 (defmacro zap% (place function &rest arguments &environment env)
   "Update `place` by applying `function` to its current value and `arguments`.
 
@@ -15,8 +16,8 @@
   "
   ;; original idea/name from http://malisper.me/2015/09/29/zap/
   (assert (find '% arguments)
-          ()
-          "Placeholder % not included in zap macro form.")
+      ()
+    "Placeholder % not included in zap macro form.")
   (multiple-value-bind (temps exprs stores store-expr access-expr)
       (get-setf-expansion place env)
     `(let* (,@(mapcar #'list temps exprs)

@@ -201,6 +201,7 @@
     #:std-intersection-point
     #:mxb-intersection-point
     #:xys-intersection-point
+    #:xys-segments-intersection-point
     #:xys-to-mxb
     #:xys-to-std
     #:std-to-xys

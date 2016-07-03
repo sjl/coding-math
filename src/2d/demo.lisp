@@ -116,8 +116,14 @@
               (when x
                 (draw-circle (multiple-value-call #'make-vec
                                (map-to-screen x y))
-                             6)))
-            ))
+                             6))))
+          (with-pen blue-pen
+            (multiple-value-bind (x y)
+                (xys-segments-intersection-point x11 y11 x12 y12 x21 y21 x22 y22)
+              (when x
+                (draw-circle (multiple-value-call #'make-vec
+                               (map-to-screen x y))
+                             3)))))
         )
       )
     ;;
