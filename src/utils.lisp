@@ -104,6 +104,30 @@
                            :step (/ (- fn-end fn-start) steps)))))))
 
 
+;;;; Iterate
+(defmacro-driver (FOR var PAIRS-OF-LIST list)
+  (let ((kwd (if generate 'generate 'for)))
+    (with-gensyms (current l)
+      `(progn
+        (with ,l = ,list)
+        (with ,current = ,l)
+        (,kwd ,var next
+         (cond
+           ((null ,current)
+            (terminate))
+
+           ((null (cdr ,current))
+            (prog1
+                (cons (first ,current) (car ,l))
+              (setf ,current nil)))
+
+           (t
+            (prog1
+                (cons (first ,current) (second ,current))
+              (setf ,current (cdr ,current))))))))))
+
+
+
 ;; snagged from squirl
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defun symbolicate (&rest things)

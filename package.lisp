@@ -3,13 +3,17 @@
   (:use
     #:cl
     #:sketch
+    #:iterate
     #:coding-math.quickutils)
+  (:shadowing-import-from #:iterate
+    #:in)
   (:export
     #:in-context
     #:scancode-case
     #:with-vals
     #:zap%
     #:%
+    #:pairs-of-list
     #:setf-slots
     #:symbolicate
     #:ensure-car
@@ -215,6 +219,7 @@
   (:use
     #:cl
     #:sketch
+    #:iterate
     #:coding-math.quickutils
     #:coding-math.utils
     #:coding-math.fps
@@ -224,7 +229,9 @@
     #:coding-math.2d.points
     #:coding-math.2d.lines
     #:coding-math.2d.hitboxes
-    #:coding-math.2d.particles))
+    #:coding-math.2d.particles)
+  (:shadowing-import-from #:iterate
+    #:in))
 
 (defpackage #:coding-math.2d.ballistics
   (:use

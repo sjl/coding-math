@@ -4,7 +4,7 @@
   "quickutils.lisp"
   :utilities '(:define-constant
                :switch
-               :while
+               ; :while
                :ensure-boolean
                :with-gensyms
                :once-only

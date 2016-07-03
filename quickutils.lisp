@@ -2,7 +2,7 @@
 ;;;; See http://quickutil.org for details.
 
 ;;;; To regenerate:
-;;;; (qtlc:save-utils-as "quickutils.lisp" :utilities '(:DEFINE-CONSTANT :SWITCH :WHILE :ENSURE-BOOLEAN :WITH-GENSYMS :ONCE-ONLY :IOTA :CURRY :RCURRY :COMPOSE :N-GRAMS) :ensure-package T :package "CODING-MATH.QUICKUTILS")
+;;;; (qtlc:save-utils-as "quickutils.lisp" :utilities '(:DEFINE-CONSTANT :SWITCH :ENSURE-BOOLEAN :WITH-GENSYMS :ONCE-ONLY :IOTA :CURRY :RCURRY :COMPOSE :N-GRAMS) :ensure-package T :package "CODING-MATH.QUICKUTILS")
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (unless (find-package "CODING-MATH.QUICKUTILS")
@@ -15,7 +15,7 @@
 (when (boundp '*utilities*)
   (setf *utilities* (union *utilities* '(:DEFINE-CONSTANT :STRING-DESIGNATOR
                                          :WITH-GENSYMS :EXTRACT-FUNCTION-NAME
-                                         :SWITCH :UNTIL :WHILE :ENSURE-BOOLEAN
+                                         :SWITCH :ENSURE-BOOLEAN
                                          :MAKE-GENSYM-LIST :ONCE-ONLY :IOTA
                                          :ENSURE-FUNCTION :CURRY :RCURRY
                                          :COMPOSE :TAKE :N-GRAMS))))
@@ -149,19 +149,6 @@ returns the values of `default` if no keys match."
                      &body clauses)
     "Like `switch`, but signals a continuable error if no key matches."
     (generate-switch-body whole object clauses test key '(cerror "Return NIL from CSWITCH.")))
-  
-
-  (defmacro until (expression &body body)
-    "Executes `body` until `expression` is true."
-    `(do ()
-         (,expression)
-       ,@body))
-  
-
-  (defmacro while (expression &body body)
-    "Executes `body` while `expression` is true."
-    `(until (not ,expression)
-       ,@body))
   
 
   (defun ensure-boolean (x)
@@ -329,8 +316,7 @@ and then calling the next one with the primary value of the last."
                       :collect (subseq sequence i (+ i n))))))
   
 (eval-when (:compile-toplevel :load-toplevel :execute)
-  (export '(define-constant switch eswitch cswitch while ensure-boolean
-            with-gensyms with-unique-names once-only iota curry rcurry compose
-            n-grams)))
+  (export '(define-constant switch eswitch cswitch ensure-boolean with-gensyms
+            with-unique-names once-only iota curry rcurry compose n-grams)))
 
 ;;;; END OF quickutils.lisp ;;;;

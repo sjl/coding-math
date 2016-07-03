@@ -42,28 +42,75 @@
 (defun draw-point (p)
   (point (vec-x p) (vec-y p)))
 
+(defun draw-polygon (points)
+  (when points
+    ;; why is this fucked?
+    (apply #'polygon
+           (iterate (for p :in points)
+                    (collect (vec-x p))
+                    (collect (vec-y p))))))
+
+
+(defun move-star (star x y)
+  (let ((center (getf star :center)))
+    (setf (particle-x center) x
+          (particle-y center) y
+
+          (getf star :points)
+          (iterate
+            (repeat 10)
+            (for a :from (getf star :angle) :by (/ tau 10))
+            (for iteration :from 0)
+            (for r = (* (getf star :radius)
+                        (if (evenp iteration) 1.0 0.5)))
+            (collect (vec-add (particle-pos center)
+                              (make-vec-md r a)))))))
+
+(defun make-star (angle radius)
+  (let ((star (list :center (make-particle 0 0 :radius 5)
+                    :angle angle
+                    :radius radius
+                    :points nil)))
+    (move-star star (random *width*) (random *height*))
+    star))
+
+
+(defun draw-star (star)
+  (draw-particle (getf star :center))
+  ; (draw-polygon (getf star :points))
+  (iterate
+    (with points = (getf star :points))
+    (for (p1 . p2) :pairs-of-list points)
+    (draw-circle p1 3)
+    (draw-line p1 p2)))
 
 (defun oob-p (p &optional (r 0.0))
   (or (outsidep (- 0 r) (+ *width* r) (vec-x p))
       (outsidep (- 0 r) (+ *height* r) (vec-y p))))
 
 
+(defun stars-collide-p (star-1 star-2)
+  (iterate
+    main
+    (for (p1 . p2) :pairs-of-list (getf star-1 :points))
+    (iterate
+      (for (p3 . p4) :pairs-of-list (getf star-2 :points))
+      (with-vecs ((x11 y11) p1
+                  (x12 y12) p2
+                  (x21 y21) p3
+                  (x22 y22) p4)
+        (in main
+            (thereis (xys-segments-intersection-point
+                       x11 y11 x12 y12 x21 y21 x22 y22)))))))
+
+
 (defsketch cm
     ((width *width*) (height *height*) (y-axis :down) (title "Coding Math 2D")
      (mouse (make-vec 0 0))
      ;; Data
-     (m1 (random-range -5 5))
-     (m2 (random-range -5 5))
-     (b1 (random-range -5 5))
-     (b2 (random-range -5 5))
-     (x11 (random-range -5 5))
-     (y11 (random-range -5 5))
-     (x12 (random-range -5 5))
-     (y12 (random-range -5 5))
-     (x21 (random-range -5 5))
-     (y21 (random-range -5 5))
-     (x22 (random-range -5 5))
-     (y22 (random-range -5 5))
+     (star-1 (make-star (random tau) (random-range 30.0 70.0)))
+     (star-2 (make-star (random tau) (random-range 30.0 70.0)))
+     (dragging nil)
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
@@ -74,57 +121,14 @@
   (with-setup
     ;;
     (in-context
-      (translate *center-x* *center-y*)
       (draw-axes *width* *height*)
-      (flet ((map-to-screen (x y)
-               (values (map-range -10.0 10.0 (- *center-x*) *center-x* x)
-                       (map-range -10.0 10.0 (- *center-y*) *center-y* y)))
-             (valid-line-p (x1 y1 x2 y2)
-               (not (and (= x1 x2)
-                         (= y1 y2))))
-             (g (fn)
-               (graph-function
-                 fn
-                 :fn-start -10 :fn-end 10
-                 :fn-min -10 :fn-max 10
-                 :graph-start (- *center-x*) :graph-end *center-x*
-                 :graph-min (- *center-y*) :graph-max *center-y*)))
-        (with-pen green-pen
-          (g (lambda (x) (+ (* m1 x) b1)))
-          (g (lambda (x) (+ (* m2 x) b2)))
-          (multiple-value-bind (x y)
-              (mxb-intersection-point m1 b1 m2 b2)
-            (when x
-              (draw-circle (multiple-value-call #'make-vec
-                             (map-to-screen x y))
-                           6))))
-        (when (and (valid-line-p x11 y11 x12 y12)
-                   (valid-line-p x21 y21 x22 y22))
-          (with-pen red-pen
-            (multiple-value-call #'line
-              (map-to-screen x11 y11)
-              (map-to-screen x12 y12))
-            (multiple-value-call #'line
-              (map-to-screen x21 y21)
-              (map-to-screen x22 y22))
-            (draw-circle (multiple-value-call #'make-vec (map-to-screen x11 y11)) 3)
-            (draw-circle (multiple-value-call #'make-vec (map-to-screen x12 y12)) 3)
-            (draw-circle (multiple-value-call #'make-vec (map-to-screen x21 y21)) 3)
-            (draw-circle (multiple-value-call #'make-vec (map-to-screen x22 y22)) 3)
-            (multiple-value-bind (x y)
-                (xys-intersection-point x11 y11 x12 y12 x21 y21 x22 y22)
-              (when x
-                (draw-circle (multiple-value-call #'make-vec
-                               (map-to-screen x y))
-                             6))))
-          (with-pen blue-pen
-            (multiple-value-bind (x y)
-                (xys-segments-intersection-point x11 y11 x12 y12 x21 y21 x22 y22)
-              (when x
-                (draw-circle (multiple-value-call #'make-vec
-                               (map-to-screen x y))
-                             3)))))
-        )
+      (with-pen red-pen
+        (draw-star star-1))
+      (with-pen blue-pen
+        (draw-star star-2))
+      (when (stars-collide-p star-1 star-2)
+        (text "BOOM!" *center-x* *center-y*))
+
       )
     ;;
     )
@@ -136,6 +140,11 @@
   (with-slots (mouse) instance
     (setf mouse (make-vec x (- *height* y)))
     ;;
+    (with-slots (dragging) instance
+      (when dragging
+        (move-star dragging x y)
+        )
+      )
     ;;
     )
   )
@@ -145,7 +154,17 @@
         300 300))
 
 (defun mousedown-left (instance x y)
-  (declare (ignorable instance x y)))
+  (declare (ignorable instance x y))
+  (with-slots (dragging star-1 star-2) instance
+    (let ((p1 (getf star-1 :center))
+          (p2 (getf star-2 :center))
+          (target (make-vec x y)))
+      (cond
+        ((circle-point-collide-p p1 target) (setf dragging star-1))
+        ((circle-point-collide-p p2 target) (setf dragging star-2))
+        (t nil)
+        )))
+  )
 
 (defun mousedown-right (instance x y)
   (declare (ignorable instance x y))
@@ -153,6 +172,8 @@
 
 (defun mouseup-left (instance x y)
   (declare (ignorable instance x y))
+  (with-slots (dragging) instance
+    (setf dragging nil))
   )
 
 (defun mouseup-right (instance x y)

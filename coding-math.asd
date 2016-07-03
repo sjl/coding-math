@@ -10,6 +10,7 @@
   :depends-on (#:defstar
                #:optima
                #:sketch
+               #:iterate
                #:sb-cga
                #:trivial-types
                #:cl-arrows
