@@ -119,6 +119,7 @@
     #:vec-to-string
     #:with-vec
     #:with-vecs
+    #:vec-to-list
     ))
 
 (defpackage #:coding-math.2d.hitboxes

@@ -1,6 +1,7 @@
 (in-package #:coding-math.2d.demo)
 
 ;;;; Config
+(setf *bypass-cache* t)
 (defparameter *width* 600)
 (defparameter *height* 400)
 
@@ -18,6 +19,20 @@
   `(with-fps
     (background (gray 1))
     ,@body))
+
+(defun oob-p (p &optional (r 0.0))
+  (or (outsidep (- 0 r) (+ *width* r) (vec-x p))
+      (outsidep (- 0 r) (+ *height* r) (vec-y p))))
+
+(defun real-time ()
+  (/ (get-internal-real-time) internal-time-units-per-second))
+
+(defun random-location ()
+  (make-random-vec *width* *height*))
+
+(defun random-location-centered ()
+  (make-vec (random-range (- *center-x*) *center-x*)
+            (random-range (- *center-y*) *center-y*)))
 
 
 ;;;; Sketch
@@ -50,67 +65,84 @@
                     (collect (vec-x p))
                     (collect (vec-y p))))))
 
-
-(defun move-star (star x y)
-  (let ((center (getf star :center)))
-    (setf (particle-x center) x
-          (particle-y center) y
-
-          (getf star :points)
-          (iterate
-            (repeat 10)
-            (for a :from (getf star :angle) :by (/ tau 10))
-            (for iteration :from 0)
-            (for r = (* (getf star :radius)
-                        (if (evenp iteration) 1.0 0.5)))
-            (collect (vec-add (particle-pos center)
-                              (make-vec-md r a)))))))
-
-(defun make-star (angle radius)
-  (let ((star (list :center (make-particle 0 0 :radius 5)
-                    :angle angle
-                    :radius radius
-                    :points nil)))
-    (move-star star (random *width*) (random *height*))
-    star))
+(defun draw-triangle (p1 p2 p3)
+  #+sketch-polygon-fn-is-fucked (polygon (vec-x p1) (vec-y p1)
+                                         (vec-x p2) (vec-y p2)
+                                         (vec-x p3) (vec-y p3))
+  (let ((vertices (list (vec-to-list p1)
+                        (vec-to-list p2)
+                        (vec-to-list p3))))
+    (sketch::draw-shape :triangles vertices vertices)))
 
 
-(defun draw-star (star)
-  (draw-particle (getf star :center))
-  ; (draw-polygon (getf star :points))
+(defun midpoint (p1 p2)
+  (vec-mul (vec-add p1 p2) 1/2))
+
+
+(defun sierpinski (n p1 p2 p3)
+  ;;           1
+  ;;
+  ;;      a         b
+  ;;
+  ;; 2         c        3
+  (if (zerop n)
+    (draw-triangle p1 p2 p3)
+    (let ((pa (midpoint p1 p2))
+          (pb (midpoint p1 p3))
+          (pc (midpoint p2 p3))
+          (m (1- n)))
+      (sierpinski m p1 pb pa)
+      (sierpinski m p2 pa pc)
+      (sierpinski m p3 pc pb))))
+
+(defun koch (n p1 p2)
+  (if (zerop n)
+    (draw-line p1 p2)
+    ;;      b
+    ;;      /\
+    ;;     /  \
+    ;; 1--a    c--2
+    (let* ((unit (vec-div (vec-sub p2 p1) 3))
+           (pa (vec-add p1 unit))
+           (pc (vec-sub p2 unit))
+           (angled-unit (make-vec-md (vec-magnitude unit)
+                                     (+ (vec-angle unit) (/ tau 6))))
+           (pb (vec-add pa angled-unit))
+           (m (1- n)))
+      (koch m p1 pa)
+      (koch m pa pb)
+      (koch m pb pc)
+      (koch m pc p2))))
+
+
+(defun random-triangle ()
+  (list (random-location-centered)
+        (random-location-centered)
+        (random-location-centered)))
+
+(defun random-equilateral-triangle (min-size max-size)
   (iterate
-    (with points = (getf star :points))
-    (for (p1 . p2) :pairs-of-list points)
-    (draw-circle p1 3)
-    (draw-line p1 p2)))
-
-(defun oob-p (p &optional (r 0.0))
-  (or (outsidep (- 0 r) (+ *width* r) (vec-x p))
-      (outsidep (- 0 r) (+ *height* r) (vec-y p))))
-
-
-(defun stars-collide-p (star-1 star-2)
-  (iterate
-    main
-    (for (p1 . p2) :pairs-of-list (getf star-1 :points))
-    (iterate
-      (for (p3 . p4) :pairs-of-list (getf star-2 :points))
-      (with-vecs ((x11 y11) p1
-                  (x12 y12) p2
-                  (x21 y21) p3
-                  (x22 y22) p4)
-        (in main
-            (thereis (xys-segments-intersection-point
-                       x11 y11 x12 y12 x21 y21 x22 y22)))))))
+    (with r = (random-range min-size max-size))
+    (with a = (random tau))
+    (with c = (random-location-centered))
+    (for (x y) :in (sketch::ngon-vertices 3 (vec-x c) (vec-y c) r r a))
+    (collect (make-vec x y))))
 
 
 (defsketch cm
-    ((width *width*) (height *height*) (y-axis :down) (title "Coding Math 2D")
+    ((width *width*) (height *height*) (y-axis :up) (title "Coding Math 2D")
+     (copy-pixels t)
      (mouse (make-vec 0 0))
+     (frame 0)
+     (start-time (real-time))
+     (current-time 0)
+     (previous-time 0)
+     (total-time 0)
      ;; Data
-     (star-1 (make-star (random tau) (random-range 30.0 70.0)))
-     (star-2 (make-star (random tau) (random-range 30.0 70.0)))
-     (dragging nil)
+     (n 0)
+     (limit 6)
+     (spoints (random-triangle))
+     (kpoints (random-equilateral-triangle 100 300))
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
@@ -118,20 +150,29 @@
      (green-pen (make-pen :stroke (rgb 0 0.6 0) :fill (rgb 0 0.9 0) :weight 1 :curve-steps 50))
      (blue-pen (make-pen :stroke (rgb 0 0 0.6) :fill (rgb 0 0 0.9) :weight 1 :curve-steps 50))
      )
-  (with-setup
-    ;;
-    (in-context
+  (setf previous-time current-time
+        current-time (real-time))
+  (incf total-time (- current-time previous-time))
+  (incf frame)
+  ;;
+  (in-context
+    (when (> total-time 0.5)
+      (setf total-time 0
+            n (mod (1+ n) limit))
+      (translate *center-x* *center-y*)
+      (background (gray 1))
       (draw-axes *width* *height*)
-      (with-pen red-pen
-        (draw-star star-1))
-      (with-pen blue-pen
-        (draw-star star-2))
-      (when (stars-collide-p star-1 star-2)
-        (text "BOOM!" *center-x* *center-y*))
-
-      )
-    ;;
+      (with-pen (make-pen :fill (gray 0))
+        (apply #'sierpinski n spoints))
+      (with-pen (make-pen :stroke (rgb 0.8 0 0) :weight (- limit n))
+        (iterate
+          (for (a . b) :pairs-of-list kpoints)
+          (koch n a b)
+          )
+        ))
     )
+  ;;
+
   )
 
 
@@ -140,30 +181,13 @@
   (with-slots (mouse) instance
     (setf mouse (make-vec x (- *height* y)))
     ;;
-    (with-slots (dragging) instance
-      (when dragging
-        (move-star dragging x y)
-        )
-      )
     ;;
     )
   )
 
-(defun draw-time ()
-  (text (format nil "~d" (get-internal-real-time))
-        300 300))
 
 (defun mousedown-left (instance x y)
   (declare (ignorable instance x y))
-  (with-slots (dragging star-1 star-2) instance
-    (let ((p1 (getf star-1 :center))
-          (p2 (getf star-2 :center))
-          (target (make-vec x y)))
-      (cond
-        ((circle-point-collide-p p1 target) (setf dragging star-1))
-        ((circle-point-collide-p p2 target) (setf dragging star-2))
-        (t nil)
-        )))
   )
 
 (defun mousedown-right (instance x y)

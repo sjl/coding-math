@@ -118,3 +118,6 @@
 (defun vec-distance-between (v0 v1)
   (distance (vec-x v0) (vec-y v0)
             (vec-x v1) (vec-y v1)))
+
+(defun vec-to-list (v)
+  (list (vec-x v) (vec-y v)))
