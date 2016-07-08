@@ -75,63 +75,38 @@
     (sketch::draw-shape :triangles vertices vertices)))
 
 
-(defun midpoint (p1 p2)
-  (vec-mul (vec-add p1 p2) 1/2))
+(defstruct (point
+             (:constructor make-point (x y old-x old-y)))
+  x y old-x old-y)
 
+(defun update-point (point)
+  (with-slots (x y old-x old-y) point
+    (let* ((friction 0.999)
+           (bounce 0.9)
+           (gravity 0.2)
+           (vx (* friction (- x old-x)))
+           (vy (* friction (- y old-y))))
+      (setf old-x x
+            old-y y)
+      (incf x vx)
+      (incf y vy)
+      (decf y gravity)
+      (macrolet ((wrap ((cur old vel) comp bound)
+                   `(when (,comp ,cur ,bound)
+                     (setf ,cur ,bound
+                           ,old (+ ,cur (* bounce ,vel))))))
+        (wrap (x old-x vx) > *width*)
+        (wrap (x old-x vx) < 0)
+        (wrap (y old-y vy) > *height*)
+        (wrap (y old-y vy) < 0)))))
 
-(defun sierpinski (n p1 p2 p3)
-  ;;           1
-  ;;
-  ;;      a         b
-  ;;
-  ;; 2         c        3
-  (if (zerop n)
-    (draw-triangle p1 p2 p3)
-    (let ((pa (midpoint p1 p2))
-          (pb (midpoint p1 p3))
-          (pc (midpoint p2 p3))
-          (m (1- n)))
-      (sierpinski m p1 pb pa)
-      (sierpinski m p2 pa pc)
-      (sierpinski m p3 pc pb))))
-
-(defun koch (n p1 p2)
-  (if (zerop n)
-    (draw-line p1 p2)
-    ;;      b
-    ;;      /\
-    ;;     /  \
-    ;; 1--a    c--2
-    (let* ((unit (vec-div (vec-sub p2 p1) 3))
-           (pa (vec-add p1 unit))
-           (pc (vec-sub p2 unit))
-           (angled-unit (make-vec-md (vec-magnitude unit)
-                                     (+ (vec-angle unit) (/ tau 6))))
-           (pb (vec-add pa angled-unit))
-           (m (1- n)))
-      (koch m p1 pa)
-      (koch m pa pb)
-      (koch m pb pc)
-      (koch m pc p2))))
-
-
-(defun random-triangle ()
-  (list (random-location-centered)
-        (random-location-centered)
-        (random-location-centered)))
-
-(defun random-equilateral-triangle (min-size max-size)
-  (iterate
-    (with r = (random-range min-size max-size))
-    (with a = (random tau))
-    (with c = (random-location-centered))
-    (for (x y) :in (sketch::ngon-vertices 3 (vec-x c) (vec-y c) r r a))
-    (collect (make-vec x y))))
-
+(defun render-point (point)
+  (with-slots (x y) point
+    (draw-circle (make-vec x y) 5)))
 
 (defsketch cm
     ((width *width*) (height *height*) (y-axis :up) (title "Coding Math 2D")
-     (copy-pixels t)
+     (copy-pixels nil)
      (mouse (make-vec 0 0))
      (frame 0)
      (start-time (real-time))
@@ -139,10 +114,7 @@
      (previous-time 0)
      (total-time 0)
      ;; Data
-     (n 0)
-     (limit 6)
-     (spoints (random-triangle))
-     (kpoints (random-equilateral-triangle 100 300))
+     (points (list (make-point 100 100 95 95)))
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
@@ -155,22 +127,11 @@
   (incf total-time (- current-time previous-time))
   (incf frame)
   ;;
-  (in-context
-    (when (> total-time 0.5)
-      (setf total-time 0
-            n (mod (1+ n) limit))
-      (translate *center-x* *center-y*)
-      (background (gray 1))
-      (draw-axes *width* *height*)
-      (with-pen (make-pen :fill (gray 0))
-        (apply #'sierpinski n spoints))
-      (with-pen (make-pen :stroke (rgb 0.8 0 0) :weight (- limit n))
-        (iterate
-          (for (a . b) :pairs-of-list kpoints)
-          (koch n a b)
-          )
-        ))
-    )
+  (with-setup
+    (in-context
+      (mapc #'update-point points)
+      (mapc #'render-point points)
+      ))
   ;;
 
   )
@@ -196,8 +157,6 @@
 
 (defun mouseup-left (instance x y)
   (declare (ignorable instance x y))
-  (with-slots (dragging) instance
-    (setf dragging nil))
   )
 
 (defun mouseup-right (instance x y)
