@@ -76,33 +76,57 @@
 
 
 (defstruct (point
-             (:constructor make-point (x y old-x old-y)))
-  x y old-x old-y)
+             (:constructor make-point (pos old-pos)))
+  pos old-pos)
+
+(defstruct (stick
+             (:constructor make-stick (a b length)))
+  a b length)
+
+
+(defun make-random-point ()
+  (let ((v (make-random-vec *width* *height*)))
+    (make-point v v)))
 
 (defun update-point (point)
-  (with-slots (x y old-x old-y) point
+  (with-slots (pos old-pos) point
     (let* ((friction 0.999)
-           (bounce 0.9)
-           (gravity 0.2)
-           (vx (* friction (- x old-x)))
-           (vy (* friction (- y old-y))))
-      (setf old-x x
-            old-y y)
-      (incf x vx)
-      (incf y vy)
-      (decf y gravity)
+           (gravity (make-vec 0 -0.2))
+           (vel (vec-mul (vec-sub pos old-pos) friction)))
+      (setf old-pos pos
+            pos (vec-add gravity (vec-add pos vel))))))
+
+(defun constrain-point (point)
+  (with-slots (pos old-pos) point
+    (let* ((bounce 0.9)
+           (vel (vec-sub pos old-pos)))
       (macrolet ((wrap ((cur old vel) comp bound)
                    `(when (,comp ,cur ,bound)
                      (setf ,cur ,bound
                            ,old (+ ,cur (* bounce ,vel))))))
-        (wrap (x old-x vx) > *width*)
-        (wrap (x old-x vx) < 0)
-        (wrap (y old-y vy) > *height*)
-        (wrap (y old-y vy) < 0)))))
+        (wrap ((vec-x pos) (vec-x old-pos) (vec-x vel)) > *width*)
+        (wrap ((vec-x pos) (vec-x old-pos) (vec-x vel)) < 0)
+        (wrap ((vec-y pos) (vec-y old-pos) (vec-y vel)) > *height*)
+        (wrap ((vec-y pos) (vec-y old-pos) (vec-y vel)) < 0)))))
+
+(defun update-stick (stick)
+  (with-slots (a b length) stick
+    (let* ((pos-a (point-pos a))
+           (pos-b (point-pos b))
+           (between (vec-sub pos-a pos-b))
+           (distance (vec-magnitude between))
+           (change (/ (- length distance) 2))
+           (correction (vec-set-magnitude between change)))
+      (setf (point-pos a) (vec-add pos-a correction))
+      (setf (point-pos b) (vec-sub pos-b correction)))))
 
 (defun render-point (point)
-  (with-slots (x y) point
-    (draw-circle (make-vec x y) 5)))
+  (draw-circle (point-pos point) 5))
+
+(defun render-stick (stick)
+  (draw-line (point-pos (stick-a stick))
+             (point-pos (stick-b stick))))
+
 
 (defsketch cm
     ((width *width*) (height *height*) (y-axis :up) (title "Coding Math 2D")
@@ -114,7 +138,12 @@
      (previous-time 0)
      (total-time 0)
      ;; Data
-     (points (list (make-point 100 100 95 95)))
+     (points (iterate (repeat 4) (collect (make-random-point))))
+     (sticks (append
+               (iterate (for (a . b) :pairs-of-list points)
+                        (collect (make-stick a b (random-range 50 200))))
+               (list (make-stick (nth 0 points) (nth 2 points) 100))
+               ))
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
@@ -130,7 +159,12 @@
   (with-setup
     (in-context
       (mapc #'update-point points)
-      (mapc #'render-point points)
+      (iterate (repeat 3)
+               (mapc #'update-stick sticks)
+               (mapc #'constrain-point points))
+      (with-pen red-pen
+        (mapc #'render-stick sticks)
+        (mapc #'render-point points))
       ))
   ;;
 

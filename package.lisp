@@ -120,6 +120,9 @@
     #:with-vec
     #:with-vecs
     #:vec-to-list
+    #:vec-set-angle
+    #:vec-set-direction
+    #:vec-set-magnitude
     ))
 
 (defpackage #:coding-math.2d.hitboxes
@@ -232,7 +235,8 @@
     #:coding-math.2d.hitboxes
     #:coding-math.2d.particles)
   (:shadowing-import-from #:iterate
-    #:in))
+    #:in)
+  (:shadow #:point))
 
 (defpackage #:coding-math.2d.ballistics
   (:use
@@ -291,5 +295,6 @@
     #:coding-math.3d.coordinates
     )
   (:import-from :sb-cga
-    :vec))
+    :vec)
+  (:shadow #:point))
 

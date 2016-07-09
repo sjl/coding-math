@@ -54,6 +54,20 @@
   (vec-angle vec))
 
 
+(defun vec-set-magnitude (vec magnitude)
+  (let ((v (copy-vec vec)))
+    (setf (vec-magnitude v) magnitude)
+    v))
+
+(defun vec-set-angle (vec angle)
+  (let ((v (copy-vec vec)))
+    (setf (vec-angle v) angle)
+    v))
+
+(defun vec-set-direction (vec angle)
+  (vec-set-angle vec angle))
+
+
 (defun (setf vec-angle) (angle vec)
   (let ((magnitude (vec-magnitude vec)))
     (setf (vec-x vec) (* magnitude (cos angle)))

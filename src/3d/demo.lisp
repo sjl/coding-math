@@ -15,6 +15,7 @@
 (defvar *command* nil)
 (defvar *option* nil)
 
+
 ;;;; Utils
 (defmacro with-centered-coords (&body body)
   `(in-context
