@@ -54,9 +54,6 @@
         (* 2 radius)
         (* 2 radius)))
 
-(defun draw-point (p)
-  (point (vec-x p) (vec-y p)))
-
 (defun draw-polygon (points)
   (when points
     ;; why is this fucked?
@@ -80,8 +77,11 @@
   pos old-pos)
 
 (defstruct (stick
-             (:constructor make-stick (a b length)))
-  a b length)
+             (:constructor make-stick (a b length &key
+                                         (hidden nil)
+                                         (color (gray 0.0))
+                                         (width 1))))
+  a b length hidden color width)
 
 
 (defun make-random-point ()
@@ -124,8 +124,10 @@
   (draw-circle (point-pos point) 5))
 
 (defun render-stick (stick)
-  (draw-line (point-pos (stick-a stick))
-             (point-pos (stick-b stick))))
+  (with-slots (a b hidden color width) stick
+    (unless hidden
+      (with-pen (make-pen :stroke color :weight width)
+        (draw-line (point-pos a) (point-pos b))))))
 
 
 (defsketch cm
@@ -141,9 +143,8 @@
      (points (iterate (repeat 4) (collect (make-random-point))))
      (sticks (append
                (iterate (for (a . b) :pairs-of-list points)
-                        (collect (make-stick a b (random-range 50 200))))
-               (list (make-stick (nth 0 points) (nth 2 points) 100))
-               ))
+                        (collect (make-stick a b (random-range 50 200) :width 5)))
+               (list (make-stick (nth 0 points) (nth 2 points) 100 :hidden t))))
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
@@ -162,8 +163,8 @@
       (iterate (repeat 3)
                (mapc #'update-stick sticks)
                (mapc #'constrain-point points))
+      (mapc #'render-stick sticks)
       (with-pen red-pen
-        (mapc #'render-stick sticks)
         (mapc #'render-point points))
       ))
   ;;
