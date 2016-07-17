@@ -73,8 +73,8 @@
 
 
 (defstruct (point
-             (:constructor make-point (pos old-pos)))
-  pos old-pos)
+             (:constructor make-point (pos old-pos pinned)))
+  pos old-pos pinned)
 
 (defstruct (stick
              (:constructor make-stick (a b length &key
@@ -86,28 +86,30 @@
 
 (defun make-random-point ()
   (let ((v (make-random-vec *width* *height*)))
-    (make-point v v)))
+    (make-point v v nil)))
 
 (defun update-point (point)
-  (with-slots (pos old-pos) point
-    (let* ((friction 0.999)
-           (gravity (make-vec 0 -0.2))
-           (vel (vec-mul (vec-sub pos old-pos) friction)))
-      (setf old-pos pos
-            pos (vec-add gravity (vec-add pos vel))))))
+  (with-slots (pos old-pos pinned) point
+    (when (not pinned)
+      (let* ((friction 0.999)
+             (gravity (make-vec 0 -0.2))
+             (vel (vec-mul (vec-sub pos old-pos) friction)))
+        (setf old-pos pos
+              pos (vec-add gravity (vec-add pos vel)))))))
 
 (defun constrain-point (point)
-  (with-slots (pos old-pos) point
-    (let* ((bounce 0.9)
-           (vel (vec-sub pos old-pos)))
-      (macrolet ((wrap ((cur old vel) comp bound)
-                   `(when (,comp ,cur ,bound)
-                     (setf ,cur ,bound
-                           ,old (+ ,cur (* bounce ,vel))))))
-        (wrap ((vec-x pos) (vec-x old-pos) (vec-x vel)) > *width*)
-        (wrap ((vec-x pos) (vec-x old-pos) (vec-x vel)) < 0)
-        (wrap ((vec-y pos) (vec-y old-pos) (vec-y vel)) > *height*)
-        (wrap ((vec-y pos) (vec-y old-pos) (vec-y vel)) < 0)))))
+  (with-slots (pos old-pos pinned) point
+    (when (not pinned)
+      (let* ((bounce 0.9)
+             (vel (vec-sub pos old-pos)))
+        (macrolet ((wrap ((cur old vel) comp bound)
+                     `(when (,comp ,cur ,bound)
+                       (setf ,cur ,bound
+                             ,old (+ ,cur (* bounce ,vel))))))
+          (wrap ((vec-x pos) (vec-x old-pos) (vec-x vel)) > *width*)
+          (wrap ((vec-x pos) (vec-x old-pos) (vec-x vel)) < 0)
+          (wrap ((vec-y pos) (vec-y old-pos) (vec-y vel)) > *height*)
+          (wrap ((vec-y pos) (vec-y old-pos) (vec-y vel)) < 0))))))
 
 (defun update-stick (stick)
   (with-slots (a b length) stick
@@ -117,8 +119,10 @@
            (distance (vec-magnitude between))
            (change (/ (- length distance) 2))
            (correction (vec-set-magnitude between change)))
-      (setf (point-pos a) (vec-add pos-a correction))
-      (setf (point-pos b) (vec-sub pos-b correction)))))
+      (when (not (point-pinned a))
+        (setf (point-pos a) (vec-add pos-a correction)))
+      (when (not (point-pinned b))
+        (setf (point-pos b) (vec-sub pos-b correction))))))
 
 (defun render-point (point)
   (draw-circle (point-pos point) 5))
@@ -130,7 +134,7 @@
         (draw-line (point-pos a) (point-pos b))))))
 
 
-(defsketch cm
+(defsketch demo
     ((width *width*) (height *height*) (y-axis :up) (title "Coding Math 2D")
      (copy-pixels nil)
      (mouse (make-vec 0 0))
@@ -140,11 +144,21 @@
      (previous-time 0)
      (total-time 0)
      ;; Data
-     (points (iterate (repeat 4) (collect (make-random-point))))
+     (points (iterate (for i :from 0 :to 6)
+                      (for p = (make-random-point))
+                      (when (= i 6)
+                        (setf (point-pinned p) t))
+                      (collect p)))
+     (pin (nth 6 points))
+     (angle 0.0)
+     (speed 0.02)
      (sticks (append
-               (iterate (for (a . b) :pairs-of-list points)
+               (iterate (for (a . b) :pairs-of-list (subseq points 0 4))
                         (collect (make-stick a b (random-range 50 200) :width 5)))
-               (list (make-stick (nth 0 points) (nth 2 points) 100 :hidden t))))
+               (list (make-stick (nth 0 points) (nth 2 points) 100 :hidden t)
+                     (make-stick (nth 3 points) (nth 4 points) 50)
+                     (make-stick (nth 4 points) (nth 5 points) 50)
+                     (make-stick (nth 5 points) (nth 6 points) 50))))
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
@@ -159,6 +173,10 @@
   ;;
   (with-setup
     (in-context
+      (incf angle speed)
+      (setf (vec-x (point-pos pin))
+            (map-range 0 1 0 *width* (expt (sin angle) 10)))
+
       (mapc #'update-point points)
       (iterate (repeat 3)
                (mapc #'update-stick sticks)
@@ -184,7 +202,7 @@
 
 (defun mousedown-left (instance x y)
   (declare (ignorable instance x y))
-  )
+  (zap% (point-pinned (nth 6 (slot-value instance 'points))) #'not %))
 
 (defun mousedown-right (instance x y)
   (declare (ignorable instance x y))
@@ -199,11 +217,11 @@
   )
 
 
-(defmethod kit.sdl2:mousemotion-event ((window cm) ts b x y xrel yrel)
+(defmethod kit.sdl2:mousemotion-event ((window demo) ts b x y xrel yrel)
   (declare (ignore ts b xrel yrel))
   (mousemove window x y))
 
-(defmethod kit.sdl2:mousebutton-event ((window cm) state ts button x y)
+(defmethod kit.sdl2:mousebutton-event ((window demo) state ts button x y)
   (declare (ignore ts))
   (funcall (case state
              (:mousebuttondown
@@ -240,7 +258,7 @@
     (:scancode-space nil)))
 
 
-(defmethod kit.sdl2:keyboard-event ((instance cm) state timestamp repeatp keysym)
+(defmethod kit.sdl2:keyboard-event ((instance demo) state timestamp repeatp keysym)
   (declare (ignore timestamp repeatp))
   (cond
     ((eql state :keyup) (keyup instance (sdl2:scancode-value keysym)))
@@ -249,4 +267,4 @@
 
 
 ;;;; Run
-; (defparameter *demo* (make-instance 'cm))
+; (defparameter *demo* (make-instance 'demo))
