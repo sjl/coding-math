@@ -72,67 +72,36 @@
     (sketch::draw-shape :triangles vertices vertices)))
 
 
-(defstruct (point
-             (:constructor make-point (pos old-pos pinned)))
-  pos old-pos pinned)
+(defun draw-tree (p0 p1 branch-angle-a branch-angle-b trunk-ratio limit)
+  (if (zerop limit)
+    (draw-line p0 p1)
+    (let* ((d (vec-mul (vec-sub p1 p0) trunk-ratio))
+           (midpoint (vec-add d p0)))
+      (draw-line p0 midpoint)
+      (draw-tree midpoint (vec-add midpoint (vec-rotate d branch-angle-a))
+                 branch-angle-a branch-angle-b trunk-ratio (1- limit))
+      (draw-tree midpoint (vec-add midpoint (vec-rotate d branch-angle-b))
+                 branch-angle-a branch-angle-b trunk-ratio (1- limit)))))
 
-(defstruct (stick
-             (:constructor make-stick (a b length &key
-                                         (hidden nil)
-                                         (color (gray 0.0))
-                                         (width 1))))
-  a b length hidden color width)
+(defun draw-pytree (size angle limit)
+  (rect 0 0 size size)
+  (when (not (zerop limit))
+    (let ((a-size (* size (cos angle)))
+          (b-size (* size (sin angle))))
+      (in-context
+        (translate 0 size)
+        (rotate (degrees angle))
+        (draw-pytree a-size angle (1- limit)))
+      (in-context
+        (translate size size)
+        (rotate (- (- 180 90 (degrees angle))))
+        (translate (- b-size) 0)
+        (draw-pytree b-size angle (1- limit))
+        )
+      )
 
-
-(defun make-random-point ()
-  (let ((v (make-random-vec *width* *height*)))
-    (make-point v v nil)))
-
-(defun update-point (point)
-  (with-slots (pos old-pos pinned) point
-    (when (not pinned)
-      (let* ((friction 0.999)
-             (gravity (make-vec 0 -0.2))
-             (vel (vec-mul (vec-sub pos old-pos) friction)))
-        (setf old-pos pos
-              pos (vec-add gravity (vec-add pos vel)))))))
-
-(defun constrain-point (point)
-  (with-slots (pos old-pos pinned) point
-    (when (not pinned)
-      (let* ((bounce 0.9)
-             (vel (vec-sub pos old-pos)))
-        (macrolet ((wrap ((cur old vel) comp bound)
-                     `(when (,comp ,cur ,bound)
-                       (setf ,cur ,bound
-                             ,old (+ ,cur (* bounce ,vel))))))
-          (wrap ((vec-x pos) (vec-x old-pos) (vec-x vel)) > *width*)
-          (wrap ((vec-x pos) (vec-x old-pos) (vec-x vel)) < 0)
-          (wrap ((vec-y pos) (vec-y old-pos) (vec-y vel)) > *height*)
-          (wrap ((vec-y pos) (vec-y old-pos) (vec-y vel)) < 0))))))
-
-(defun update-stick (stick)
-  (with-slots (a b length) stick
-    (let* ((pos-a (point-pos a))
-           (pos-b (point-pos b))
-           (between (vec-sub pos-a pos-b))
-           (distance (vec-magnitude between))
-           (change (/ (- length distance) 2))
-           (correction (vec-set-magnitude between change)))
-      (when (not (point-pinned a))
-        (setf (point-pos a) (vec-add pos-a correction)))
-      (when (not (point-pinned b))
-        (setf (point-pos b) (vec-sub pos-b correction))))))
-
-(defun render-point (point)
-  (draw-circle (point-pos point) 5))
-
-(defun render-stick (stick)
-  (with-slots (a b hidden color width) stick
-    (unless hidden
-      (with-pen (make-pen :stroke color :weight width)
-        (draw-line (point-pos a) (point-pos b))))))
-
+    )
+  )
 
 (defsketch demo
     ((width *width*) (height *height*) (y-axis :up) (title "Coding Math 2D")
@@ -144,21 +113,15 @@
      (previous-time 0)
      (total-time 0)
      ;; Data
-     (points (iterate (for i :from 0 :to 6)
-                      (for p = (make-random-point))
-                      (when (= i 6)
-                        (setf (point-pinned p) t))
-                      (collect p)))
-     (pin (nth 6 points))
-     (angle 0.0)
-     (speed 0.02)
-     (sticks (append
-               (iterate (for (a . b) :pairs-of-list (subseq points 0 4))
-                        (collect (make-stick a b (random-range 50 200) :width 5)))
-               (list (make-stick (nth 0 points) (nth 2 points) 100 :hidden t)
-                     (make-stick (nth 3 points) (nth 4 points) 50)
-                     (make-stick (nth 4 points) (nth 5 points) 50)
-                     (make-stick (nth 5 points) (nth 6 points) 50))))
+     (p0 (make-vec *center-x* 50))
+     (p1 (make-vec *center-x* (- *height* 200)))
+     (branch-angle-a (random-range (- (/ tau 4)) (/ tau 4)))
+     (branch-angle-b (random-range (- (/ tau 4)) (/ tau 4)))
+     (trunk-ratio 1/2)
+
+     (py-angle (/ tau 8))
+
+     (a 0.0)
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
@@ -171,19 +134,21 @@
   (incf total-time (- current-time previous-time))
   (incf frame)
   ;;
+  (incf a 0.02)
+  (wrapf a 0 tau)
+
+  (setf trunk-ratio (map-range -1 1 1/4 3/4 (sin a)))
+
+  (setf py-angle (map-range 0 tau 0 (/ tau 4) a))
+
   (with-setup
     (in-context
-      (incf angle speed)
-      (setf (vec-x (point-pos pin))
-            (map-range 0 1 0 *width* (expt (sin angle) 10)))
-
-      (mapc #'update-point points)
-      (iterate (repeat 3)
-               (mapc #'update-stick sticks)
-               (mapc #'constrain-point points))
-      (mapc #'render-stick sticks)
+      (with-pen black-pen
+        (in-context
+          (translate (- *center-x* 40) 0)
+          (draw-pytree 80 py-angle 5)))
       (with-pen red-pen
-        (mapc #'render-point points))
+        (draw-tree p0 p1 branch-angle-a branch-angle-b trunk-ratio 8))
       ))
   ;;
 
@@ -202,7 +167,7 @@
 
 (defun mousedown-left (instance x y)
   (declare (ignorable instance x y))
-  (zap% (point-pinned (nth 6 (slot-value instance 'points))) #'not %))
+  )
 
 (defun mousedown-right (instance x y)
   (declare (ignorable instance x y))

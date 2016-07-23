@@ -111,11 +111,13 @@
     #:vec-sub
     #:vec-mul
     #:vec-div
+    #:vec-rotate
     #:vec-lerp
     #:vec-add!
     #:vec-sub!
     #:vec-mul!
     #:vec-div!
+    #:vec-rotate!
     #:vec-to-string
     #:with-vec
     #:with-vecs

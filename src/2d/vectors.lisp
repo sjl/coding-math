@@ -100,6 +100,9 @@
   (make-vec (/ (vec-x v) s)
             (/ (vec-y v) s)))
 
+(defun vec-rotate (v angle)
+  (vec-set-angle v (+ (vec-angle v) angle)))
+
 
 (defun vec-add! (v1 v2)
   (incf (vec-x v1) (vec-x v2))
@@ -117,6 +120,9 @@
   (setf (vec-x v) (/ (vec-x v) s)
         (vec-y v) (/ (vec-y v) s)))
 
+(defun vec-rotate! (v angle)
+  (setf (vec-angle v)
+        (+ (vec-angle v) angle)))
 
 (defun vec-lerp (v1 v2 n)
   (with-vecs ((x1 y1) v1
