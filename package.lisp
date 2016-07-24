@@ -287,6 +287,7 @@
 (defpackage #:coding-math.3d.demo
   (:use
     #:cl
+    #:iterate
     #:sketch
     #:coding-math.quickutils
     #:coding-math.utils
@@ -298,5 +299,7 @@
     )
   (:import-from :sb-cga
     :vec)
+  (:shadowing-import-from #:iterate
+    #:in)
   (:shadow #:point))
 

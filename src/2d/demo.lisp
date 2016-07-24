@@ -143,12 +143,8 @@
 
   (with-setup
     (in-context
-      (with-pen black-pen
-        (in-context
-          (translate (- *center-x* 40) 0)
-          (draw-pytree 80 py-angle 5)))
-      (with-pen red-pen
-        (draw-tree p0 p1 branch-angle-a branch-angle-b trunk-ratio 8))
+      (translate *center-x* *center-y*)
+      
       ))
   ;;
 

@@ -2,7 +2,7 @@
 
 
 ;;;; Config
-(setf *bypass-cache* t)
+(setf *bypass-cache* nil)
 (defparameter *width* 600)
 (defparameter *height* 400)
 
@@ -14,6 +14,10 @@
 (defvar *control* nil)
 (defvar *command* nil)
 (defvar *option* nil)
+
+
+(defvar *tile-width* 100)
+(defvar *tile-height* 50)
 
 
 ;;;; Utils
@@ -28,113 +32,125 @@
     (with-centered-coords
       ,@body)))
 
+(defun real-time ()
+  (/ (get-internal-real-time) internal-time-units-per-second))
+
 
 ;;;; Draw
 (defun draw-point (screen size)
   (circle (vec-x screen) (vec-y screen) size))
 
+(defun draw-tile (x y pen)
+  ;;         0 0
+  ;;          h
+  ;;  a        wwwwww b
+  ;;
+  ;;          c
+  (in-context
+    (let* ((w (/ *tile-width* 2))
+           (h (/ *tile-height* 2))
+           (ax (- w))
+           (ay (- h))
+           (bx (+ w))
+           (by (- h))
+           (cx 0)
+           (cy (- *tile-height*)))
+      (translate (* (- x y) w)
+                 (* -1 (+ x y) h))
+      (with-pen pen
+        (polygon 0 0 ax ay cx cy bx by)))))
 
-;;;; Structs
-(defstruct (point (:constructor make-point (world &optional screen)))
-  world screen)
-
-
-;;;; Functions
-(defun rotate-x (angle points)
-  (let ((s (sin angle))
-        (c (cos angle)))
-    (map nil (lambda (p)
-               (with-vec (p (point-world p))
-                 (psetf p.y (- (* p.y c) (* p.z s))
-                        p.z (+ (* p.z c) (* p.y s)))))
-         points)))
-
-(defun rotate-y (angle points)
-  (let ((s (sin angle))
-        (c (cos angle)))
-    (map nil (lambda (p)
-               (with-vec (p (point-world p))
-                 (psetf p.x (- (* p.x c) (* p.z s))
-                        p.z (+ (* p.z c) (* p.x s)))))
-         points)))
-
-(defun rotate-z (angle points)
-  (let ((s (sin angle))
-        (c (cos angle)))
-    (map nil (lambda (p)
-               (with-vec (p (point-world p))
-                 (psetf p.x (- (* p.x c) (* p.y s))
-                        p.y (+ (* p.y c) (* p.x s)))))
-         points)))
+(defun draw-block (x y z)
+  ;;          a
+  ;;          h
+  ;;  b        wwwwww c
+  ;;
+  ;;          d
+  ;;
+  ;;
+  ;;
+  ;;          O
+  ;;
+  ;;  e               g
+  ;;
+  ;;          f
+  (in-context
+    (let* ((ww *tile-width*)
+           (hh *tile-height*)
+           (w (/ ww 2.0))
+           (h (/ hh 2.0))
+           (ax 0.0)
+           (ay (* z hh))
+           (bx (- w))
+           (by (- ay h))
+           (cx (+ w))
+           (cy (- ay h))
+           (dx 0.0)
+           (dy (- ay hh))
+           (ex (- w))
+           (ey (- h))
+           (gx (+ w))
+           (gy (- h))
+           (fx 0.0)
+           (fy (- hh))
+           )
+      (translate (* (- x y) w)
+                 (* -1 (+ x y) h))
+      (with-pen (make-pen :fill (rgb 0 0 1.0))
+        (polygon ax ay bx by dx dy cx cy))
+      (with-pen (make-pen :fill (rgb 0 0 0.6))
+        (polygon bx by dx dy fx fy ex ey))
+      (with-pen (make-pen :fill (rgb 0 0 0.3))
+        (polygon dx dy cx cy gx gy fx fy)))))
 
 
 ;;;; Sketch
-(defun project (points focal-length center-z)
-  (map nil
-       (lambda (p)
-         (with-vecs ((screen (point-screen p))
-                     (world (point-world p)))
-           (let ((scale (/ focal-length (+ focal-length world.z center-z))))
-             (setf screen.x (* scale world.x)
-                   screen.y (* scale world.y)))))
-       points))
-
-(defun translate-model (points x y z)
-  (map nil (lambda (p)
-             (with-vec (p (point-world p))
-               (incf p.x x)
-               (incf p.y y)
-               (incf p.z z)))
-       points))
-
-
 (defsketch demo
-    ((width *width*) (height *height*) (y-axis :up) (title "Coding Math")
+    ((width *width*) (height *height*) (y-axis :up) (title "Coding Math 3D")
+     (copy-pixels nil)
      (mouse (cons 0 0))
-     ;; variables
-     (fl 300.0)
-     (r 200.0)
-     (center-z 1500.0)
-     (points
-       (make-array 8
-         :initial-contents
-         (list
-           (make-point (vec (- r) (- r)     r) (zero-vec))
-           (make-point (vec     r (- r)     r) (zero-vec))
-           (make-point (vec     r (- r) (- r)) (zero-vec))
-           (make-point (vec (- r) (- r) (- r)) (zero-vec))
-           (make-point (vec (- r)     r     r) (zero-vec))
-           (make-point (vec     r     r     r) (zero-vec))
-           (make-point (vec     r     r (- r)) (zero-vec))
-           (make-point (vec (- r)     r (- r)) (zero-vec)))))
+     (frame 0)
+     (start-time (real-time))
+     (current-time 0)
+     (previous-time 0)
+     (total-time 0)
+     ;; data
+     (h 0.1)
+     (tiles (iterate
+              tiles
+              (for x :from 0 :below 10)
+              (iterate (for y :from 0 :below 10)
+                       (in tiles
+                           (collect (list x y (make-pen :fill (gray (random-range 0.2 0.8)))))))))
+     (blocks (iterate
+               blocks
+               (for x :from 0 :below 4)
+               (iterate (for y :from 0 :below 4)
+                        (in blocks
+                            (collect (list (+ 3 x)
+                                           (+ 3 y)
+                                           (random-range 1 4)))))))
      ;; pens
-     (simple-pen (make-pen :fill (gray 0.1)))
-     (line-pen (make-pen :stroke (gray 0.1) :weight 1))
-     )
+     (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
+     (red-pen (make-pen :stroke (rgb 0.6 0 0) :fill (rgb 0.9 0 0) :weight 1 :curve-steps 50))
+     (green-pen (make-pen :stroke (rgb 0 0.6 0) :fill (rgb 0 0.9 0) :weight 1 :curve-steps 50))
+     (blue-pen (make-pen :stroke (rgb 0 0 0.6) :fill (rgb 0 0 0.9) :weight 1 :curve-steps 50)))
+  (setf previous-time current-time
+        current-time (real-time))
+  (incf total-time (- current-time previous-time))
+  (incf frame)
   (with-setup
-    (flet
-        ((draw-line (&rest vertices)
-           (loop :for (a b) ; lame way to close the loop...
-                 :in (n-grams 2 (append vertices (list (car vertices))))
-                 :do (with-vecs ((a (point-screen (aref points a)))
-                                 (b (point-screen (aref points b))))
-                       (line a.x a.y b.x b.y)))))
-      (project points fl center-z)
-      (when *shift* (text "shift!" 100 100))
-      (when *control* (text "control!" 100 120))
-      (with-pen simple-pen
-        ; (loop :for p :across points
-        ;       :do (draw-point (point-screen p) 5))
-        nil)
-      (with-pen line-pen
-        (draw-line 0 1 2 3)
-        (draw-line 0 3 7 4)
-        (draw-line 1 2 6 5)
-        (draw-line 6 5 4 7)
-        nil
-        ))
     ;;
-    ))
+    (incf h 0.02)
+    (wrapf h 0.1 2.5)
+    (in-context
+      (translate 0 (- *center-y* 20))
+      (iterate (for (x y pen) :in tiles)
+               (draw-tile x y pen))
+      (iterate (for (x y z) :in blocks)
+               (draw-block x y z))
+      (draw-block 3 7 h)
+      )))
 
 
 ;;;; Mouse
@@ -192,24 +208,6 @@
     (:scancode-lgui (setf *command* t))
     (:scancode-lalt (setf *option* t))
     ;;
-    (:scancode-left  (if *shift*
-                       (rotate-y -0.05 (demo-points instance))
-                       (translate-model (slot-value instance 'points) -15 0 0)))
-    (:scancode-right (if *shift*
-                       (rotate-y 0.05 (demo-points instance))
-                       (translate-model (slot-value instance 'points) 15 0 0)))
-    (:scancode-up    (if *shift*
-                       (rotate-x -0.05 (demo-points instance))
-                       (translate-model (slot-value instance 'points) 0 15 0)))
-    (:scancode-down  (if *shift*
-                       (rotate-x 0.05 (demo-points instance))
-                       (translate-model (slot-value instance 'points) 0 -15 0)))
-    (:scancode-s     (if *shift*
-                       (rotate-z -0.05 (demo-points instance))
-                       (translate-model (slot-value instance 'points) 0 0 -15)))
-    (:scancode-w     (if *shift*
-                       (rotate-z 0.05 (demo-points instance))
-                       (translate-model (slot-value instance 'points) 0 0 15)))
     ;;
     ))
 
