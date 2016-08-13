@@ -1,32 +1,6 @@
 (in-package #:coding-math.utils)
 
 
-(defmacro zap% (place function &rest arguments &environment env)
-  "Update `place` by applying `function` to its current value and `arguments`.
-
-  `arguments` should contain the symbol `%`, which is treated as a placeholder
-  where the current value of the place will be substituted into the function
-  call.
-
-  For example:
-
-  (zap% foo #'- % 10) => (setf foo (- foo 10)
-  (zap% foo #'- 10 %) => (setf foo (- 10 foo)
-
-  "
-  ;; original idea/name from http://malisper.me/2015/09/29/zap/
-  (assert (find '% arguments)
-      ()
-    "Placeholder % not included in zap macro form.")
-  (multiple-value-bind (temps exprs stores store-expr access-expr)
-      (get-setf-expansion place env)
-    `(let* (,@(mapcar #'list temps exprs)
-            (,(car stores)
-             (funcall ,function
-                      ,@(substitute access-expr '% arguments))))
-      ,store-expr)))
-
-
 (defmacro in-context (&body body)
   `(prog1
     (push-matrix)
@@ -60,11 +34,6 @@
     (setf
       ,@(loop :for (slot val) :on bindings :by #'cddr
               :append (list slot val)))))
-
-
-(defun juxt (&rest fns)
-  (lambda (&rest args)
-    (mapcar (rcurry #'apply args) fns)))
 
 
 ;;;; Handy drawing functions
@@ -102,30 +71,6 @@
                      (iota (1+ steps)
                            :start fn-start
                            :step (/ (- fn-end fn-start) steps)))))))
-
-
-;;;; Iterate
-(defmacro-driver (FOR var PAIRS-OF-LIST list)
-  (let ((kwd (if generate 'generate 'for)))
-    (with-gensyms (current l)
-      `(progn
-        (with ,l = ,list)
-        (with ,current = ,l)
-        (,kwd ,var next
-         (cond
-           ((null ,current)
-            (terminate))
-
-           ((null (cdr ,current))
-            (prog1
-                (cons (first ,current) (car ,l))
-              (setf ,current nil)))
-
-           (t
-            (prog1
-                (cons (first ,current) (second ,current))
-              (setf ,current (cdr ,current))))))))))
-
 
 
 ;; snagged from squirl

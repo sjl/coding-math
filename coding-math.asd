@@ -14,6 +14,7 @@
                #:sb-cga
                #:trivial-types
                #:cl-arrows
+               #:losh
                #:fare-quasiquote-optima
                #:fare-quasiquote-readtable)
 
