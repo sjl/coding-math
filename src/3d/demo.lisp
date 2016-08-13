@@ -19,6 +19,9 @@
 (defvar *tile-width* 100)
 (defvar *tile-height* 50)
 
+(defvar *map-width* 10)
+(defvar *map-height* 10)
+
 
 ;;;; Utils
 (defmacro with-centered-coords (&body body)
@@ -103,6 +106,15 @@
       (with-pen (make-pen :fill (rgb 0 0 0.3))
         (polygon dx dy cx cy gx gy fx fy)))))
 
+(defun draw-player (x y pen)
+  (in-context
+    (let* ((w (/ *tile-width* 2))
+           (h (/ *tile-height* 2)))
+      (translate (* (- x y) w)
+                 (* -1 (+ x y) h))
+      (with-pen pen
+        (circle 0 (- h) (/ (min w h) 2))))))
+
 
 ;;;; Sketch
 (defsketch demo
@@ -115,21 +127,32 @@
      (previous-time 0)
      (total-time 0)
      ;; data
-     (h 0.1)
-     (tiles (iterate
-              tiles
-              (for x :from 0 :below 10)
-              (iterate (for y :from 0 :below 10)
-                       (in tiles
-                           (collect (list x y (make-pen :fill (gray (random-range 0.2 0.8)))))))))
-     (blocks (iterate
-               blocks
-               (for x :from 0 :below 4)
-               (iterate (for y :from 0 :below 4)
-                        (in blocks
-                            (collect (list (+ 3 x)
-                                           (+ 3 y)
-                                           (random-range 1 4)))))))
+     (player (cons 0 0))
+     (tiles (make-array '(10 10) :initial-contents
+              '((:w :w :w :w :w :w :w :w :w :w)
+                (:w :w :w :w :s :s :w :w :w :w)
+                (:w :w :s :s :g :g :s :w :w :w)
+                (:w :s :g :g :g :g :s :w :w :w)
+                (:w :s :g :g :g :g :g :s :s :w)
+                (:w :w :s :g :g :g :g :s :w :w)
+                (:w :w :w :s :g :g :s :w :w :w)
+                (:w :w :w :w :s :s :w :w :w :w)
+                (:w :w :w :w :w :s :w :w :w :w)
+                (:w :w :w :w :w :w :w :w :w :w))))
+     (blocks (make-array '(10 10) :initial-contents
+               '((1 1 1 1 1 1 1 1 1 1)
+                 (1 1 1 1 2 2 1 1 1 1)
+                 (1 1 2 2 3 3 2 1 1 1)
+                 (1 2 3 3 3 3 2 1 1 1)
+                 (1 2 3 3 3 3 3 2 2 1)
+                 (1 1 2 3 3 3 3 2 1 1)
+                 (1 1 1 2 3 3 2 1 1 1)
+                 (1 1 1 1 2 2 1 1 1 1)
+                 (1 1 1 1 1 2 1 1 1 1)
+                 (1 1 1 1 1 1 1 1 1 1))))
+     (sand-pen (make-pen :fill (rgb 1.000 0.733 0.424)))
+     (water-pen (make-pen :fill (rgb 0.282 0.569 0.639)))
+     (grass-pen (make-pen :fill (rgb 0.349 0.518 0.196)))
      ;; pens
      (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
      (red-pen (make-pen :stroke (rgb 0.6 0 0) :fill (rgb 0.9 0 0) :weight 1 :curve-steps 50))
@@ -141,16 +164,18 @@
   (incf frame)
   (with-setup
     ;;
-    (incf h 0.02)
-    (wrapf h 0.1 2.5)
     (in-context
       (translate 0 (- *center-y* 20))
-      (iterate (for (x y pen) :in tiles)
-               (draw-tile x y pen))
-      (iterate (for (x y z) :in blocks)
-               (draw-block x y z))
-      (draw-block 3 7 h)
-      )))
+      (iterate
+        (for (tile x y) :in-array tiles)
+        (draw-tile x y (case tile
+                         (:w water-pen)
+                         (:s sand-pen)
+                         (:g grass-pen))))
+      #+no (iterate
+        (for (height x y) :in-array blocks)
+        (draw-block x y height))
+      (draw-player (car player) (cdr player) red-pen))))
 
 
 ;;;; Mouse
@@ -201,15 +226,20 @@
 ;;;; Keyboard
 (defun keydown (instance scancode)
   (declare (ignorable instance))
-  (scancode-case scancode
-    (:scancode-space (sketch::prepare instance))
-    (:scancode-lshift (setf *shift* t))
-    (:scancode-lctrl (setf *control* t))
-    (:scancode-lgui (setf *command* t))
-    (:scancode-lalt (setf *option* t))
-    ;;
-    ;;
-    ))
+  (with-slots (player) instance
+    (scancode-case scancode
+      (:scancode-space (sketch::prepare instance))
+      (:scancode-lshift (setf *shift* t))
+      (:scancode-lctrl (setf *control* t))
+      (:scancode-lgui (setf *command* t))
+      (:scancode-lalt (setf *option* t))
+      ;;
+      (:scancode-left  (decf (car player)) (clampf (car player) 0 (1- *map-width*)))
+      (:scancode-right (incf (car player)) (clampf (car player) 0 (1- *map-width*)))
+      (:scancode-up    (decf (cdr player)) (clampf (cdr player) 0 (1- *map-height*)))
+      (:scancode-down  (incf (cdr player)) (clampf (cdr player) 0 (1- *map-height*)))
+      ;;
+      )))
 
 (defun keyup (instance scancode)
   (declare (ignorable instance))
