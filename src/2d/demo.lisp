@@ -20,19 +20,39 @@
     (background (gray 1))
     ,@body))
 
-(defun oob-p (p &optional (r 0.0))
-  (or (outsidep (- 0 r) (+ *width* r) (vec-x p))
-      (outsidep (- 0 r) (+ *height* r) (vec-y p))))
-
 (defun real-time ()
   (/ (get-internal-real-time) internal-time-units-per-second))
 
 (defun random-location ()
-  (make-random-vec *width* *height*))
+  (vec2 (random-range 0 *width*)
+        (random-range 0 *height*)))
 
 (defun random-location-centered ()
-  (make-vec (random-range (- *center-x*) *center-x*)
-            (random-range (- *center-y*) *center-y*)))
+  (vec2 (random-range (- *center-x*) *center-x*)
+        (random-range (- *center-y*) *center-y*)))
+
+
+;;;; Episode
+(defstruct (arm (:constructor make-arm (pos length angle &optional parent)))
+  pos length angle parent)
+
+(define-with-macro arm pos length angle parent)
+
+
+(defun arm-total-angle (arm)
+  (loop :for a = arm :then (arm-parent a)
+        :while a
+        :sum (arm-angle a)))
+
+(defun arm-end (arm)
+  (with-arm arm
+    (vec2-add pos (vec2-magdir length (arm-total-angle arm)))))
+
+(defparameter *arm-pen* (make-pen :stroke (gray 0.1) :weight 5))
+
+(defun draw-arm (arm &optional (pen *arm-pen*))
+  (with-arm arm
+    (with-pen pen (draw-line pos (arm-end arm)))))
 
 
 ;;;; Sketch
@@ -40,17 +60,15 @@
   (circle (particle-x p) (particle-y p) (particle-radius p)))
 
 (defun draw-line (p1 p2)
-  (with-vecs ((x1 y1) p1 (x2 y2) p2)
-    (line x1 y1 x2 y2)))
+  (line (vec2-x p1) (vec2-y p1)
+        (vec2-x p2) (vec2-y p2)))
 
 (defun draw-circle (p &optional (radius 5))
-  (if (listp p)
-    (circle (getf p :x) (getf p :y) (or (getf p :radius) radius))
-    (circle (vec-x p) (vec-y p) radius)))
+  (circle (vec2-x p) (vec2-y p) radius))
 
 (defun draw-square (p radius)
-  (rect (- (vec-x p) radius)
-        (- (vec-y p) radius)
+  (rect (- (vec2-x p) radius)
+        (- (vec2-y p) radius)
         (* 2 radius)
         (* 2 radius)))
 
@@ -59,69 +77,42 @@
     ;; why is this fucked?
     (apply #'polygon
            (iterate (for p :in points)
-                    (collect (vec-x p))
-                    (collect (vec-y p))))))
+                    (collect (vec2-x p))
+                    (collect (vec2-y p))))))
+
+(defun vec-to-list (v)
+  (list (vec2-x v) (vec2-y v)))
 
 (defun draw-triangle (p1 p2 p3)
-  #+sketch-polygon-fn-is-fucked (polygon (vec-x p1) (vec-y p1)
-                                         (vec-x p2) (vec-y p2)
-                                         (vec-x p3) (vec-y p3))
+  #+sketch-polygon-fn-is-fucked (polygon (vec2-x p1) (vec2-y p1)
+                                         (vec2-x p2) (vec2-y p2)
+                                         (vec2-x p3) (vec2-y p3))
   (let ((vertices (list (vec-to-list p1)
                         (vec-to-list p2)
                         (vec-to-list p3))))
     (sketch::draw-shape :triangles vertices vertices)))
 
 
-(defun draw-tree (p0 p1 branch-angle-a branch-angle-b trunk-ratio limit)
-  (if (zerop limit)
-    (draw-line p0 p1)
-    (let* ((d (vec-mul (vec-sub p1 p0) trunk-ratio))
-           (midpoint (vec-add d p0)))
-      (draw-line p0 midpoint)
-      (draw-tree midpoint (vec-add midpoint (vec-rotate d branch-angle-a))
-                 branch-angle-a branch-angle-b trunk-ratio (1- limit))
-      (draw-tree midpoint (vec-add midpoint (vec-rotate d branch-angle-b))
-                 branch-angle-a branch-angle-b trunk-ratio (1- limit)))))
-
-(defun draw-pytree (size angle limit)
-  (rect 0 0 size size)
-  (when (not (zerop limit))
-    (let ((a-size (* size (cos angle)))
-          (b-size (* size (sin angle))))
-      (in-context
-        (translate 0 size)
-        (rotate (degrees angle))
-        (draw-pytree a-size angle (1- limit)))
-      (in-context
-        (translate size size)
-        (rotate (- (- 180 90 (degrees angle))))
-        (translate (- b-size) 0)
-        (draw-pytree b-size angle (1- limit))
-        )
-      )
-
-    )
-  )
-
 (defsketch demo
     ((width *width*) (height *height*) (y-axis :up) (title "Coding Math 2D")
      (copy-pixels nil)
-     (mouse (make-vec 0 0))
+     (mouse (vec2 0 0))
      (frame 0)
      (start-time (real-time))
      (current-time 0)
      (previous-time 0)
      (total-time 0)
      ;; Data
-     (p0 (make-vec *center-x* 50))
-     (p1 (make-vec *center-x* (- *height* 200)))
-     (branch-angle-a (random-range (- (/ tau 4)) (/ tau 4)))
-     (branch-angle-b (random-range (- (/ tau 4)) (/ tau 4)))
-     (trunk-ratio 1/2)
-
-     (py-angle (/ tau 8))
-
      (a 0.0)
+     (arms (iterate (repeat 8)
+                    (for arm = (make-arm (if prev
+                                           (arm-end prev)
+                                           (vec2 0 0))
+                                         (random-range 30 60)
+                                         (random-around 0.0 (* tau 0.3))
+                                         prev))
+                    (for prev :previous arm)
+                    (collect arm)))
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
@@ -134,17 +125,24 @@
   (incf total-time (- current-time previous-time))
   (incf frame)
   ;;
-  (incf a 0.02)
-  (wrapf a 0 tau)
-
-  (setf trunk-ratio (map-range -1 1 1/4 3/4 (sin a)))
-
-  (setf py-angle (map-range 0 tau 0 (/ tau 4) a))
-
   (with-setup
     (in-context
       (translate *center-x* *center-y*)
-      
+
+      (incf a 0.03)
+
+      (iterate
+        (for arm :in arms)
+        (for prev :previous arm)
+        (for incr :first 1.0 :then (* incr 0.8))
+        (if-first-time
+          (setf (arm-angle arm) (* incr pi (sin a)))
+          ;; uncomment to twirl vvvvv
+          ; (setf (arm-angle arm) (* incr pi (sin a)))
+          )
+        (when prev
+          (setf (arm-pos arm) (arm-end prev)))
+        (draw-arm arm))
       ))
   ;;
 
@@ -154,7 +152,8 @@
 ;;;; Mouse
 (defun mousemove (instance x y)
   (with-slots (mouse) instance
-    (setf mouse (make-vec x (- *height* y)))
+    (setf (vec2-x mouse) x
+          (vec2-y mouse) (- *height* y))
     ;;
     ;;
     )

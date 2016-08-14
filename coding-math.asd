@@ -28,6 +28,7 @@
                  (:file "math")
                  (:file "fps")
                  (:file "tween")
+                 (:file "vectors")
                  (:module "2d"
                   :serial t
                   :components ((:file "vectors")

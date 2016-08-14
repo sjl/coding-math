@@ -9,6 +9,7 @@
   (:shadowing-import-from #:iterate
     #:in)
   (:export
+    #:define-with-macro
     #:in-context
     #:scancode-case
     #:with-vals
@@ -111,6 +112,10 @@
     vec2f-div
     vec2d-div
     vec2i-div
+    vec2-magdir
+    vec2f-magdir
+    vec2d-magdir
+    vec2i-magdir
     vec2-eql
     vec2f-eql
     vec2d-eql
@@ -291,11 +296,12 @@
     #:coding-math.fps
     #:coding-math.math
     #:coding-math.tween
-    #:coding-math.2d.vectors
     #:coding-math.2d.points
     #:coding-math.2d.lines
     #:coding-math.2d.hitboxes
-    #:coding-math.2d.particles)
+    #:coding-math.2d.particles
+    #:coding-math.vectors
+    )
   (:shadowing-import-from #:iterate
     #:in)
   (:shadow #:point))
