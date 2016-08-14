@@ -33,11 +33,24 @@
 
 
 ;;;; Episode
-(defstruct (arm (:constructor make-arm (pos length angle &optional parent)))
-  pos length angle parent)
+(defstruct (arm (:constructor %make-arm))
+  pos length angle parent center-angle rotation-range phase-offset)
 
-(define-with-macro arm pos length angle parent)
+(defun make-arm (length center-angle rotation-range parent phase-offset)
+  (%make-arm :pos (vec2 0 0)
+             :length length
+             :angle center-angle
+             :parent parent
+             :center-angle center-angle
+             :rotation-range rotation-range
+             :phase-offset phase-offset))
 
+(define-with-macro arm pos length angle parent center-angle rotation-range phase-offset)
+
+
+(defun arm-set-phase (arm phase)
+  (with-arm arm
+    (setf angle (+ center-angle (* rotation-range (sin (+ phase-offset phase)))))))
 
 (defun arm-total-angle (arm)
   (loop :for a = arm :then (arm-parent a)
@@ -53,6 +66,50 @@
 (defun draw-arm (arm &optional (pen *arm-pen*))
   (with-arm arm
     (with-pen pen (draw-line pos (arm-end arm)))))
+
+
+(defclass forward-kinematics-system ()
+  ((origin :type vec2 :initarg :origin :reader fks-origin)
+   (arms   :type vector :initarg :arms :accessor fks-arms)
+   (last-arm :initarg :last-arm :accessor fks-last-arm)
+   (phase :initarg :phase :accessor fks-phase)
+   (speed :initform 0.05 :accessor fks-speed)))
+
+(defun make-fks (x y &optional (starting-phase 0.0))
+  (make-instance 'forward-kinematics-system
+                 :origin (vec2 x y)
+                 :arms (make-array 10 :fill-pointer 0)
+                 :last-arm nil
+                 :phase starting-phase))
+
+
+(defun fks-update (fks)
+  (iterate (with phase = (fks-phase fks))
+           (for arm :in-vector (fks-arms fks))
+           (for parent = (arm-parent arm))
+           (arm-set-phase arm phase)
+           (setf (arm-pos arm)
+                 (if parent
+                   (arm-end parent)
+                   (fks-origin fks))))
+  (incf (fks-phase fks) (fks-speed fks))
+  (wrapf (fks-phase fks) 0 tau)
+  )
+
+
+(defun fks-add-arm (fks length center-angle rotation-range &optional (phase-offset 0.0))
+  (let* ((arm (make-arm length center-angle rotation-range
+                        (fks-last-arm fks) phase-offset)))
+    (vector-push-extend arm (fks-arms fks) 10)
+    (setf (fks-last-arm fks) arm))
+  (fks-update fks))
+
+(defun draw-fks (fks)
+  (map nil #'draw-arm (fks-arms fks)))
+
+(defun fks-rotate-arm (fks arm-index angle)
+  (setf (arm-angle (aref (fks-arms fks) arm-index))
+        angle))
 
 
 ;;;; Sketch
@@ -104,15 +161,16 @@
      (total-time 0)
      ;; Data
      (a 0.0)
-     (arms (iterate (repeat 8)
-                    (for arm = (make-arm (if prev
-                                           (arm-end prev)
-                                           (vec2 0 0))
-                                         (random-range 30 60)
-                                         (random-around 0.0 (* tau 0.3))
-                                         prev))
-                    (for prev :previous arm)
-                    (collect arm)))
+     (leg0 (make-fks 0 0))
+     (leg1 (make-fks 0 0 pi))
+     (lol (progn
+            (fks-add-arm leg0 90 (* tau  -1/4) (* tau 1/6))
+            (fks-add-arm leg0 60 (* tau -1/12) (* tau 1/12) -1.5)
+            (fks-add-arm leg0 20 (* tau   1/5) (* tau (- 1/4 1/5)) -1.5)
+            (fks-add-arm leg1 90 (* tau  -1/4) (* tau 1/6))
+            (fks-add-arm leg1 60 (* tau -1/12) (* tau 1/12) -1.5)
+            (fks-add-arm leg1 20 (* tau   1/5) (* tau (- 1/4 1/5)) -1.5)
+            ))
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
@@ -129,20 +187,10 @@
     (in-context
       (translate *center-x* *center-y*)
 
-      (incf a 0.03)
-
-      (iterate
-        (for arm :in arms)
-        (for prev :previous arm)
-        (for incr :first 1.0 :then (* incr 0.8))
-        (if-first-time
-          (setf (arm-angle arm) (* incr pi (sin a)))
-          ;; uncomment to twirl vvvvv
-          ; (setf (arm-angle arm) (* incr pi (sin a)))
-          )
-        (when prev
-          (setf (arm-pos arm) (arm-end prev)))
-        (draw-arm arm))
+      (fks-update leg0)
+      (fks-update leg1)
+      (draw-fks leg0)
+      (draw-fks leg1)
       ))
   ;;
 

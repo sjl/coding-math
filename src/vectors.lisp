@@ -9,6 +9,7 @@
   (defun symbolize (&rest args)
     (intern (format nil "~{~A~}" args))))
 
+
 (defun square (x)
   (* x x))
 
