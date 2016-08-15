@@ -278,6 +278,7 @@
 (defpackage #:coding-math.2d.demo
   (:use
     #:cl
+    #:cl-arrows
     #:losh
     #:sketch
     #:iterate
