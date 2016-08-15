@@ -9,7 +9,6 @@
   (:shadowing-import-from #:iterate
     #:in)
   (:export
-    #:define-with-macro
     #:in-context
     #:scancode-case
     #:with-vals
@@ -28,19 +27,10 @@
     #:coding-math.quickutils
     #:coding-math.utils)
   (:export
-    #:tau
-    #:mulf
-    #:dividesp
-    #:square
     #:distance
     #:random-range
     #:random-around
     #:random-dist
-    #:norm
-    #:lerp
-    #:precise-lerp
-    #:map-range
-    #:clamp
     #:wrap-zero
     #:wrap-range
     #:wrapf

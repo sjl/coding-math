@@ -36,41 +36,6 @@
               :append (list slot val)))))
 
 
-(defmacro define-with-macro (type &rest slots)
-  "Define a with-`type` macro for the given `type` and `slots`.
-
-  This new macro wraps `with-accessors` so you don't have to type `type-`
-  a billion times.
-
-  The given `type` must be a symbol naming a struct or class.  It must have the
-  appropriate accessors with names exactly of the form `type-slot`.
-
-  There's a lot of magic here, but it cuts down on boilerplate for simple things
-  quite a lot.
-
-  Example:
-
-    (defstruct foo x y)
-    (define-with-macro foo x y)
-
-    (with-foo (make-foo :x 10 :y 20)
-      (setf x 88)
-      (print x)
-      (print y))
-    =>
-    88
-    20
-
-  "
-  (with-gensyms (body)
-    `(defmacro ,(symbolize 'with- type) (,type &body ,body)
-      `(with-accessors
-        ,',(loop :for slot :in slots
-                 :collect `(,slot ,(symbolize type '- slot)))
-        ,,type
-        ,@,body))))
-
-
 ;;;; Handy drawing functions
 (defparameter axis-pen (make-pen :stroke (gray 0.7) :weight 2))
 

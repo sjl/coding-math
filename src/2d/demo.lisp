@@ -45,11 +45,12 @@
              :rotation-range rotation-range
              :phase-offset phase-offset))
 
-(define-with-macro arm pos length angle parent center-angle rotation-range phase-offset)
+(define-with-macro arm
+  pos length angle parent center-angle rotation-range phase-offset)
 
 
 (defun arm-set-phase (arm phase)
-  (with-arm arm
+  (with-arm (arm)
     (setf angle (+ center-angle (* rotation-range (sin (+ phase-offset phase)))))))
 
 (defun arm-total-angle (arm)
@@ -58,13 +59,13 @@
         :sum (arm-angle a)))
 
 (defun arm-end (arm)
-  (with-arm arm
+  (with-arm (arm)
     (vec2-add pos (vec2-magdir length (arm-total-angle arm)))))
 
 (defparameter *arm-pen* (make-pen :stroke (gray 0.1) :weight 5))
 
 (defun draw-arm (arm &optional (pen *arm-pen*))
-  (with-arm arm
+  (with-arm (arm)
     (with-pen pen (draw-line pos (arm-end arm)))))
 
 

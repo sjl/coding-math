@@ -90,8 +90,8 @@
   (push target (particle-gravitations particle)))
 
 (defun particle-gravitate-remove! (particle target)
-  (zap% (particle-gravitations particle)
-        #'remove target %))
+  (zapf (particle-gravitations particle)
+        (remove target %)))
 
 (defun particle-gravitate-to! (particle attractor-particle)
   (let ((distance (particle-distance-to particle attractor-particle)))
@@ -115,8 +115,8 @@
         (particle-springs particle)))
 
 (defun particle-spring-remove! (particle target)
-  (zap% (particle-springs particle)
-        #'remove target % :key #'spring-target))
+  (zapf (particle-springs particle)
+        (remove target % :key #'spring-target)))
 
 
 (defun particle-update! (particle)

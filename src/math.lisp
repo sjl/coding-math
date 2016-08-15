@@ -1,25 +1,8 @@
 (in-package #:coding-math.math)
 
-(declaim (inline square outsidep insidep wrap-zero wrap-range
+(declaim (inline outsidep insidep wrap-zero wrap-range
                  norm lerp clamp distance))
 
-
-;;;; Constants
-(defparameter tau (coerce (* pi 2) 'single-float))
-
-
-;; Basics
-(defun dividesp (n divisor)
-  "Return whether `n` is evenly divisible by `divisor`."
-  (zerop (mod n divisor)))
-
-(defun square (n)
-  "Return the square of `n`."
-  (* n n))
-
-(defmacro mulf (place n)
-  "Multiply `place` by `n` in-place."
-  `(zap% ,place #'* % ,n))
 
 
 ;; Geometry
@@ -42,45 +25,6 @@
         :finally (return (/ total iterations))))
 
 
-;;;; Number range mapping
-(defun norm (min max val)
-  (/ (- val min)
-     (- max min)))
-
-(defun lerp (from to n)
-  "Lerp together `from` and `to` by factor `n`.
-
-  Note that you might want `precise-lerp` instead.
-
-  "
-  (+ from
-     (* n (- to from))))
-
-(defun precise-lerp (from to n)
-  "Lerp together `from` and `to` by factor `n`, precisely.
-
-  Vanilla lerp does not guarantee `(lerp from to 0.0)` will return exactly
-  `from` due to floating-point errors.  This version will return exactly `from`
-  when given a `n` of `0.0`, at the cost of an extra multiplication.
-
-  "
-  (+ (* (- 1 n) from)
-     (* n to)))
-
-(defun map-range (source-from source-to dest-from dest-to source-val)
-  "Map `source-val` from the source range to the destination range."
-  (lerp dest-from dest-to
-        (norm source-from source-to source-val)))
-
-(defun clamp (from to n)
-  (let ((max (max from to))
-        (min (min from to)))
-    (cond
-      ((> n max) max)
-      ((< n min) min)
-      (t n))))
-
-
 ;;;; Wrapping
 (defun wrap-zero (max val)
   "Wrap `val` around the range [0, max)."
@@ -93,7 +37,7 @@
           (- max min))))
 
 (defmacro wrapf (place min max)
-  `(zap% ,place #'wrap-range ,min ,max %))
+  `(zapf ,place (wrap-range ,min ,max %)))
 
 
 (defun insidep (from to val)
