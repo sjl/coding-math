@@ -105,6 +105,19 @@
     (when arm
       (arm-drag arm target))))
 
+(defun iks-correct (iks)
+  (iterate
+    (for arm :in-vector (iks-arms iks))
+    (for parent = (arm-parent arm))
+    (setf (arm-pos arm)
+          (if parent
+            (arm-end parent)
+            (iks-origin iks)))))
+
+(defun iks-reach (iks target)
+  (iks-drag iks target)
+  (iks-correct iks))
+
 
 ;;;; Sketch
 (defun draw-particle (p)
@@ -154,10 +167,19 @@
      (previous-time 0)
      (total-time 0)
      ;; Data
-     (iks (make-iks (vec2 0 0)))
+     (iks1 (make-iks (vec2 (- 150) (- *center-y*))))
+     (iks2 (make-iks (vec2 (+ 150) (- *center-y*))))
+     (ball (make-particle 0 0
+                          :speed (random-around 20 2.0)
+                          :direction (random tau)
+                          :mass 10.0
+                          :radius 10
+                          :gravity 0.0))
      (lol (progn
-            (iterate (repeat 5)
-                     (iks-add-arm iks (random-around 30 10)))
+            (iterate (repeat 6)
+                     (iks-add-arm iks1 (random-around 50 30)))
+            (iterate (repeat 6)
+                     (iks-add-arm iks2 (random-around 50 30)))
             ))
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
@@ -176,8 +198,37 @@
       (translate *center-x* *center-y*)
       (draw-axes *width* *height*)
 
-      (iks-drag iks mouse)
-      (draw-iks iks)
+      (particle-update! ball)
+
+      ;; Garbage wrapping code because I don't feel like rewriting the particle
+      ;; system to use the new vectors and centered coordinates.
+      (let ((x (particle-x ball))
+            (y (particle-y ball)))
+        (when (not (< (- *center-x*) x *center-x*))
+          (negatef (coding-math.2d.vectors::vec-x (particle-vel ball)))
+          (setf
+            (particle-x ball) (max (- *center-x*) x)
+            (particle-x ball) (min (+ *center-x*) x)
+
+            (coding-math.2d.vectors::vec-magnitude (particle-vel ball))
+            (* 0.95 (coding-math.2d.vectors::vec-magnitude (particle-vel ball)))))
+        (when (not (< (- *center-y*) y *center-y*))
+          (negatef (coding-math.2d.vectors::vec-y (particle-vel ball)))
+          (setf
+            (particle-x ball) (max (- *center-x*) x)
+            (particle-x ball) (min (+ *center-x*) x)
+
+            (coding-math.2d.vectors::vec-magnitude (particle-vel ball))
+                (* 0.95 (coding-math.2d.vectors::vec-magnitude (particle-vel ball))))))
+
+      (draw-particle ball)
+
+      (let ((target (vec2 (particle-x ball)
+                          (particle-y ball))))
+        (iks-reach iks1 target)
+        (draw-iks iks1)
+        (iks-reach iks2 target)
+        (draw-iks iks2))
 
       ))
   ;;
