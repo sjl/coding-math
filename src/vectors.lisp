@@ -73,9 +73,13 @@
 
 (defmacro defvec2ops (vec-type element-type)
   (let ((add (symbolize vec-type '-add))
+        (add* (symbolize vec-type '-add*))
         (add! (symbolize vec-type '-add!))
+        (add*! (symbolize vec-type '-add*!))
         (sub (symbolize vec-type '-sub))
+        (sub* (symbolize vec-type '-sub*))
         (sub! (symbolize vec-type '-sub!))
+        (sub*! (symbolize vec-type '-sub*!))
         (mul (symbolize vec-type '-mul))
         (mul! (symbolize vec-type '-mul!))
         (div (symbolize vec-type '-div))
@@ -85,7 +89,8 @@
         (magnitude (symbolize vec-type '-magnitude))
         (length (symbolize vec-type '-length))
         (angle (symbolize vec-type '-angle))
-        (direction (symbolize vec-type '-direction)))
+        (direction (symbolize vec-type '-direction))
+        (set! (symbolize vec-type '-set!)))
     `(progn
       (declaim
         (ftype (function (,element-type ,element-type)
@@ -100,6 +105,10 @@
                          (values ,vec-type &optional))
                ,add ,sub ,add! ,sub!)
 
+        (ftype (function (,vec-type ,element-type ,element-type)
+                         (values ,vec-type &optional))
+               ,add* ,add*! ,sub* ,sub*! ,set!)
+
         (ftype (function (,vec-type ,element-type)
                          (values ,vec-type &optional))
                ,mul ,div ,mul! ,div!)
@@ -112,6 +121,11 @@
 
       (with-fns
         ,vec-type ,element-type
+
+        (defun ,set! (v x y)
+          (setf (vec-x v) x
+                (vec-y v) y)
+          v)
 
         (defun ,magdir (magnitude direction)
           ;; todo figure this out for integer vectors
@@ -127,29 +141,44 @@
                  (= (vec-y v1) (vec-y v2)))))
 
         (defun ,add (v1 v2)
-          (vec
-            (wrap (+ (vec-x v1) (vec-x v2)))
-            (wrap (+ (vec-y v1) (vec-y v2)))))
+          (vec (wrap (+ (vec-x v1) (vec-x v2)))
+               (wrap (+ (vec-y v1) (vec-y v2)))))
+
+        (defun ,add* (v x y)
+          (vec (wrap (+ (vec-x v) x))
+               (wrap (+ (vec-y v) y))))
 
         (defun ,add! (v1 v2)
           (setf (vec-x v1) (wrap (+ (vec-x v1) (vec-x v2)))
                 (vec-y v1) (wrap (+ (vec-y v1) (vec-y v2))))
           v1)
 
+        (defun ,add*! (v x y)
+          (setf (vec-x v) (wrap (+ (vec-x v) x))
+                (vec-y v) (wrap (+ (vec-y v) y)))
+          v)
+
         (defun ,sub (v1 v2)
-          (vec
-            (wrap (- (vec-x v1) (vec-x v2)))
-            (wrap (- (vec-y v1) (vec-y v2)))))
+          (vec (wrap (- (vec-x v1) (vec-x v2)))
+               (wrap (- (vec-y v1) (vec-y v2)))))
+
+        (defun ,sub* (v x y)
+          (vec (wrap (- (vec-x v) x))
+               (wrap (- (vec-y v) y))))
 
         (defun ,sub! (v1 v2)
           (setf (vec-x v1) (wrap (- (vec-x v1) (vec-x v2)))
                 (vec-y v1) (wrap (- (vec-y v1) (vec-y v2))))
           v1)
 
+        (defun ,sub*! (v x y)
+          (setf (vec-x v) (wrap (- (vec-x v) x))
+                (vec-y v) (wrap (- (vec-y v) y)))
+          v)
+
         (defun ,mul (v scalar)
-          (vec
-            (wrap (* (vec-x v) scalar))
-            (wrap (* (vec-y v) scalar))))
+          (vec (wrap (* (vec-x v) scalar))
+               (wrap (* (vec-y v) scalar))))
 
         (defun ,mul! (v scalar)
           (setf (vec-x v) (wrap (* (vec-x v) scalar))
@@ -157,9 +186,8 @@
           v)
 
         (defun ,div (v scalar)
-          (vec
-            (wrap (// (vec-x v) scalar))
-            (wrap (// (vec-y v) scalar))))
+          (vec (wrap (// (vec-x v) scalar))
+               (wrap (// (vec-y v) scalar))))
 
         (defun ,div! (v scalar)
           (setf (vec-x v) (wrap (// (vec-x v) scalar))
@@ -179,9 +207,14 @@
 (defvec2ops vec2d double-float)
 (defvec2ops vec2i fixnum)
 
-; (declaim (optimize (speed 3) (safety 1) (debug 0)))
+(declaim (optimize (speed 3) (safety 1) (debug 0)))
 ; vec2i-eql
 ; vec2f-add
+; vec2f-add*
+; vec2f-add!
+; vec2f-add*!
+; vec2f-set!
+; vec2f-sub*!
 ; vec2f-add!
 ; vec2f-sub!
 ; vec2f-mul!
