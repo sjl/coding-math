@@ -3,7 +3,7 @@
 ;;;; Config
 (setf *bypass-cache* t)
 (defparameter *width* 600)
-(defparameter *height* 400)
+(defparameter *height* 600)
 
 (defparameter *center-x* (/ *width* 2))
 (defparameter *center-y* (/ *height* 2))
@@ -33,91 +33,13 @@
   (vec2 (random-range (- *center-x*) *center-x*)
         (random-range (- *center-y*) *center-y*)))
 
+(defmacro just-once (dirty-place &body body)
+  `(when ,dirty-place
+     (setf ,dirty-place nil)
+     ,@body))
+
 
 ;;;; Episode
-(defparameter *arm-pen* (make-pen :weight 10 :stroke (gray 0.1)))
-
-(defstruct (arm (:constructor make-arm (pos length angle &optional parent)))
-  pos length angle parent)
-
-(define-with-macro arm
-  pos length angle parent)
-
-
-(defun arm-end (arm)
-  (with-arm (arm)
-    (vec2-add pos (vec2-magdir length angle))))
-
-(defun draw-arm (arm &optional (pen *arm-pen*))
-  (with-pen pen (draw-line (arm-pos arm) (arm-end arm))))
-
-(defun arm-point-at (arm target)
-  (with-arm (arm)
-    (setf angle (-<> target
-                  (vec2-sub <> pos)
-                  vec2-angle))))
-
-(defun arm-drag (arm target)
-  (arm-point-at arm target)
-  (with-arm (arm)
-    (setf pos (vec2-sub target
-                        (vec2-magdir length angle)))
-    (when parent
-      (arm-drag parent pos))))
-
-
-(defun vector-last (vector)
-  (let ((l (length vector)))
-    (if (zerop l)
-      nil
-      (aref vector (1- l)))))
-
-
-(defclass inverse-kinematic-system ()
-  ((origin :initarg :origin
-           :accessor iks-origin)
-   (arms :initform (make-array 10 :fill-pointer 0)
-         :accessor iks-arms)))
-
-(define-with-macro iks origin arms)
-
-
-(defun make-iks (origin)
-  (make-instance 'inverse-kinematic-system :origin origin))
-
-(defun iks-last-arm (iks)
-  (vector-last (iks-arms iks)))
-
-(defun iks-add-arm (iks length)
-  (with-iks (iks)
-    (let ((parent (iks-last-arm iks)))
-      (vector-push-extend (make-arm (if parent
-                                      (arm-pos parent)
-                                      origin)
-                                    length 0 parent)
-                        arms))))
-
-(defun draw-iks (iks)
-  (map nil #'draw-arm (iks-arms iks)))
-
-(defun iks-drag (iks target)
-  (let ((arm (iks-last-arm iks)))
-    (when arm
-      (arm-drag arm target))))
-
-(defun iks-correct (iks)
-  (iterate
-    (for arm :in-vector (iks-arms iks))
-    (for parent = (arm-parent arm))
-    (setf (arm-pos arm)
-          (if parent
-            (arm-end parent)
-            (iks-origin iks)))))
-
-(defun iks-reach (iks target)
-  (iks-drag iks target)
-  (iks-correct iks))
-
 
 ;;;; Sketch
 (defun draw-particle (p)
@@ -159,7 +81,7 @@
 
 (defsketch demo
     ((width *width*) (height *height*) (y-axis :up) (title "Coding Math 2D")
-     (copy-pixels nil)
+     (copy-pixels t)
      (mouse (vec2 0 0))
      (frame 0)
      (start-time (real-time))
@@ -167,70 +89,56 @@
      (previous-time 0)
      (total-time 0)
      ;; Data
-     (iks1 (make-iks (vec2 (- 150) (- *center-y*))))
-     (iks2 (make-iks (vec2 (+ 150) (- *center-y*))))
-     (ball (make-particle 0 0
-                          :speed (random-around 20 2.0)
-                          :direction (random tau)
-                          :mass 10.0
-                          :radius 10
-                          :gravity 0.0))
-     (lol (progn
-            (iterate (repeat 6)
-                     (iks-add-arm iks1 (random-around 50 30)))
-            (iterate (repeat 6)
-                     (iks-add-arm iks2 (random-around 50 30)))
-            ))
+     (transforms
+       (list (sb-cga::matrix 0.85  0.04 0.00 0.00
+                             -0.04 0.85 0.00 1.60
+                             0.00  0.00 0.00 0.00
+                             0.00  0.00 0.00 1.00)
+             (sb-cga::matrix -0.15 0.28 0.00 0.00
+                             0.26  0.24 0.00 0.44
+                             0.00  0.00 0.00 0.00
+                             0.00  0.00 0.00 1.00)
+             (sb-cga::matrix 0.20 -0.26 0.00 0.00
+                             0.23  0.22 0.00 1.60
+                             0.00  0.00 0.00 0.00
+                             0.00  0.00 0.00 1.00)
+             (sb-cga::matrix 0.00 0.00 0.00 0.00
+                             0.00 0.16 0.00 0.00
+                             0.00 0.00 0.00 0.00
+                             0.00 0.00 0.00 1.00)))
+     (weights (list 0.85 0.07 0.07 0.01))
+     (wl (make-weightlist transforms weights))
+     (point (sb-cga::vec (random 1.0) (random 1.0) 0.0))
+     (dirty t)
      ;; Pens
      (particle-pen (make-pen :fill (gray 0.9) :stroke (gray 0.4)))
      (black-pen (make-pen :stroke (rgb 0 0 0) :fill (rgb 0.4 0.4 0.4) :weight 1 :curve-steps 50))
      (red-pen (make-pen :stroke (rgb 0.6 0 0) :fill (rgb 0.9 0 0) :weight 1 :curve-steps 50))
      (green-pen (make-pen :stroke (rgb 0 0.6 0) :fill (rgb 0 0.9 0) :weight 1 :curve-steps 50))
      (blue-pen (make-pen :stroke (rgb 0 0 0.6) :fill (rgb 0 0 0.9) :weight 1 :curve-steps 50))
+     (black-fill-pen (make-pen :fill (gray 0) :weight 0))
      )
   (setf previous-time current-time
         current-time (real-time))
   (incf total-time (- current-time previous-time))
   (incf frame)
   ;;
-  (with-setup
-    (in-context
-      (translate *center-x* *center-y*)
-      (draw-axes *width* *height*)
+  (just-once dirty
+    (background (gray 1.0)))
+  (in-context
+    (translate *center-x* 0)
+    (iterate
+      (repeat 100)
+      (with-pen black-fill-pen
+        #+no (sketch:point (* 50 (aref point 0))
+                           (* 50 (aref point 1)))
+        (sketch:rect (* 50 (aref point 0))
+                     (* 50 (aref point 1))
+                     0.5
+                     0.5))
+      (zapf point (sb-cga::transform-point % (weightlist-random wl))))
 
-      (particle-update! ball)
-
-      ;; Garbage wrapping code because I don't feel like rewriting the particle
-      ;; system to use the new vectors and centered coordinates.
-      (let ((x (particle-x ball))
-            (y (particle-y ball)))
-        (when (not (< (- *center-x*) x *center-x*))
-          (negatef (coding-math.2d.vectors::vec-x (particle-vel ball)))
-          (setf
-            (particle-x ball) (max (- *center-x*) x)
-            (particle-x ball) (min (+ *center-x*) x)
-
-            (coding-math.2d.vectors::vec-magnitude (particle-vel ball))
-            (* 0.95 (coding-math.2d.vectors::vec-magnitude (particle-vel ball)))))
-        (when (not (< (- *center-y*) y *center-y*))
-          (negatef (coding-math.2d.vectors::vec-y (particle-vel ball)))
-          (setf
-            (particle-x ball) (max (- *center-x*) x)
-            (particle-x ball) (min (+ *center-x*) x)
-
-            (coding-math.2d.vectors::vec-magnitude (particle-vel ball))
-                (* 0.95 (coding-math.2d.vectors::vec-magnitude (particle-vel ball))))))
-
-      (draw-particle ball)
-
-      (let ((target (vec2 (particle-x ball)
-                          (particle-y ball))))
-        (iks-reach iks1 target)
-        (draw-iks iks1)
-        (iks-reach iks2 target)
-        (draw-iks iks2))
-
-      ))
+    )
   ;;
 
   )
