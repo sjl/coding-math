@@ -11,11 +11,11 @@
               (tx ty) to
               (cx cy) control)
     (setf (vec-x destination)
-          (+ (* (square (- 1 n)) fx)
+          (+ (* (losh:square (- 1 n)) fx)
              (* 2 (- 1 n) n cx)
              (* n n tx))
           (vec-y destination)
-          (+ (* (square (- 1 n)) fy)
+          (+ (* (losh:square (- 1 n)) fy)
              (* 2 (- 1 n) n cy)
              (* n n ty))))
   destination)

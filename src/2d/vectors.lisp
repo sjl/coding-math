@@ -127,8 +127,8 @@
 (defun vec-lerp (v1 v2 n)
   (with-vecs ((x1 y1) v1
               (x2 y2) v2)
-    (make-vec (lerp x1 x2 n)
-              (lerp y1 y2 n))))
+    (make-vec (losh:lerp x1 x2 n)
+              (losh:lerp y1 y2 n))))
 
 
 (defun vec-to-string (v)

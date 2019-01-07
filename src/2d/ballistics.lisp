@@ -1,6 +1,7 @@
 (in-package #:coding-math.2d.ballistics)
 
 ;;;; Config
+(defparameter *demo* nil)
 (defparameter *width* 600)
 (defparameter *height* 400)
 
@@ -34,7 +35,7 @@
   (with-pen *force-fg-pen*
     (circle 20
             (- *height* 50)
-            (map-range -1.0 1.0 0 15 force))))
+            (losh:map-range -1.0 1.0 0 15 force))))
 
 (defun draw-target (target)
   (when target
@@ -47,10 +48,10 @@
 ;;;; Game
 (defun aim (gun x y)
   (setf (getf gun 'angle)
-        (clamp (- (/ tau 4))
-               -0.3
-               (atan (- y (getf gun 'y))
-                     (- x (getf gun 'x))))))
+        (losh:clamp (- (/ losh:tau 4))
+                    -0.3
+                    (atan (- y (getf gun 'y))
+                          (- x (getf gun 'x))))))
 
 (defun shoot (game)
   (force-output)
@@ -60,7 +61,7 @@
         firedp t
         (particle-x cannonball) (+ (getf gun 'x) (* 40 (cos angle)))
         (particle-y cannonball) (+ (getf gun 'y) (* 40 (sin angle)))
-        (particle-speed cannonball) (map-range -1.0 1.0 2 20.0 raw-force)
+        (particle-speed cannonball) (losh:map-range -1.0 1.0 2 20.0 raw-force)
         (particle-direction cannonball) angle))))
 
 (defun update-ball (game)
@@ -72,10 +73,10 @@
       (setf firedp nil))))
 
 (defun check-target (game)
-  (when (and (target game)
-             (circles-collide-p (cannonball game)
-                                (target game)))
-    (setf (win game) t)))
+  (when (and (game-target game)
+             (circles-collide-p (game-cannonball game)
+                                (game-target game)))
+    (setf (game-win game) t)))
 
 (defun random-target ()
   (list :x (random-range 200 *width*)
@@ -112,9 +113,9 @@
     (draw-force raw-force)
     (draw-target target)
 
-    (when firedp
-      (update-ball sketch::sketch-window)
-      (check-target sketch::sketch-window))
+    (when (and *demo* firedp)
+      (update-ball *demo*)
+      (check-target *demo*))
     (when win
       (text "You win!" *center-x* *center-y*))
 
@@ -148,7 +149,7 @@
 (defun keyup (game scancode)
   (scancode-case scancode
     (:scancode-space
-     (when (not (firedp game))
+     (when (not (game-firedp game))
        (shoot game)))))
 
 
@@ -162,4 +163,4 @@
 
 
 ;;;; Run
-; (defparameter *demo* (make-instance 'game))
+;; (defparameter *demo* (make-instance 'game))

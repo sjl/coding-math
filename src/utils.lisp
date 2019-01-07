@@ -62,7 +62,7 @@
            (lerp dest-from dest-to
                  (norm source-from source-to source-val))))
       (apply #'polyline
-             (mapcan (juxt
+             (mapcan (losh:juxt
                        (lambda (x)
                          (map-range fn-start fn-end graph-start graph-end x))
                        (lambda (x)

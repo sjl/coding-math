@@ -2,7 +2,7 @@
 
 
 ;;;; Config
-(setf *bypass-cache* nil)
+(defparameter *bypass-cache* nil)
 (defparameter *width* 600)
 (defparameter *height* 400)
 
@@ -234,10 +234,10 @@
       (:scancode-lgui (setf *command* t))
       (:scancode-lalt (setf *option* t))
       ;;
-      (:scancode-left  (decf (car player)) (clampf (car player) 0 (1- *map-width*)))
-      (:scancode-right (incf (car player)) (clampf (car player) 0 (1- *map-width*)))
-      (:scancode-up    (decf (cdr player)) (clampf (cdr player) 0 (1- *map-height*)))
-      (:scancode-down  (incf (cdr player)) (clampf (cdr player) 0 (1- *map-height*)))
+      (:scancode-left  (decf (car player)) (losh:clampf (car player) 0 (1- *map-width*)))
+      (:scancode-right (incf (car player)) (losh:clampf (car player) 0 (1- *map-width*)))
+      (:scancode-up    (decf (cdr player)) (losh:clampf (cdr player) 0 (1- *map-height*)))
+      (:scancode-down  (incf (cdr player)) (losh:clampf (cdr player) 0 (1- *map-height*)))
       ;;
       )))
 
@@ -260,4 +260,4 @@
 
 
 ;;;; Run
-; (defparameter *demo* (make-instance 'demo))
+(defparameter *demo* (make-instance 'demo))

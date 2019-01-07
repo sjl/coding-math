@@ -7,8 +7,8 @@
 
 ;; Geometry
 (defun distance (x0 y0 x1 y1)
-  (sqrt (+ (square (- x0 x1))
-           (square (- y0 y1)))))
+  (sqrt (+ (losh:square (- x0 x1))
+           (losh:square (- y0 y1)))))
 
 
 ;;;; Random
@@ -37,7 +37,7 @@
           (- max min))))
 
 (defmacro wrapf (place min max)
-  `(zapf ,place (wrap-range ,min ,max %)))
+  `(losh:zapf ,place (wrap-range ,min ,max losh:%)))
 
 
 (defun insidep (from to val)

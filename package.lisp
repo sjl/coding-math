@@ -2,7 +2,6 @@
 (defpackage #:coding-math.utils
   (:use
     #:cl
-    #:losh
     #:sketch
     #:iterate
     #:coding-math.quickutils)
@@ -23,7 +22,6 @@
 (defpackage #:coding-math.math
   (:use
     #:cl
-    #:losh
     #:coding-math.quickutils
     #:coding-math.utils)
   (:export
@@ -44,7 +42,6 @@
 (defpackage #:coding-math.fps
   (:use
     #:cl
-    #:losh
     #:sketch
     #:coding-math.quickutils
     #:coding-math.math
@@ -56,7 +53,6 @@
 (defpackage #:coding-math.tween
   (:use
     #:cl
-    #:losh
     #:coding-math.quickutils
     #:coding-math.math
     #:coding-math.utils)
@@ -168,7 +164,6 @@
 (defpackage #:coding-math.2d.vectors
   (:use
     #:cl
-    #:losh
     #:coding-math.math
     #:coding-math.quickutils
     #:coding-math.utils)
@@ -206,7 +201,6 @@
 (defpackage #:coding-math.2d.hitboxes
   (:use
     #:cl
-    #:losh
     #:sketch
     #:coding-math.2d.vectors
     #:coding-math.math
@@ -228,7 +222,6 @@
 (defpackage #:coding-math.2d.particles
   (:use
     #:cl
-    #:losh
     #:coding-math.math
     #:coding-math.2d.vectors
     #:coding-math.2d.hitboxes
@@ -263,7 +256,6 @@
 (defpackage #:coding-math.2d.points
   (:use
     #:cl
-    #:losh
     #:sketch
     #:coding-math.math
     #:coding-math.2d.vectors
@@ -281,7 +273,6 @@
 (defpackage #:coding-math.2d.lines
   (:use
     #:cl
-    #:losh
     #:sketch
     #:coding-math.math
     #:coding-math.2d.vectors
@@ -305,7 +296,6 @@
   (:use
     #:cl
     #:cl-arrows
-    #:losh
     #:sketch
     #:iterate
     #:coding-math.quickutils
@@ -326,7 +316,6 @@
 (defpackage #:coding-math.2d.ballistics
   (:use
     #:cl
-    #:losh
     #:sketch
     #:coding-math.quickutils
     #:coding-math.tween
@@ -341,7 +330,6 @@
 (defpackage #:coding-math.3d.vectors
   (:use
     #:cl
-    #:losh
     #:sb-cga
     #:coding-math.math
     #:coding-math.utils
@@ -358,7 +346,6 @@
 (defpackage #:coding-math.3d.coordinates
   (:use
     #:cl
-    #:losh
     #:sb-cga
     #:coding-math.math
     #:coding-math.3d.vectors
@@ -373,7 +360,6 @@
 (defpackage #:coding-math.3d.demo
   (:use
     #:cl
-    #:losh
     #:iterate
     #:sketch
     #:coding-math.quickutils

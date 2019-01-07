@@ -35,5 +35,5 @@
       (update-average (- (get-internal-real-time) ,start))
       (draw-fps)
       (incf *frame*)
-      (when (dividesp *frame* 15)
+      (when (losh:dividesp *frame* 15)
         (update-fps)))))

@@ -29,7 +29,7 @@
   (make-particle%
     :pos (make-vec x y)
     :vel (make-vec-md speed direction)
-    :grv (make-vec-md gravity (/ tau 4))
+    :grv (make-vec-md gravity (/ losh:tau 4))
     :friction friction
     :mass mass
     :radius radius))
@@ -90,8 +90,7 @@
   (push target (particle-gravitations particle)))
 
 (defun particle-gravitate-remove! (particle target)
-  (zapf (particle-gravitations particle)
-        (remove target %)))
+  (alexandria:removef (particle-gravitations particle) target))
 
 (defun particle-gravitate-to! (particle attractor-particle)
   (let ((distance (particle-distance-to particle attractor-particle)))
@@ -115,8 +114,7 @@
         (particle-springs particle)))
 
 (defun particle-spring-remove! (particle target)
-  (zapf (particle-springs particle)
-        (remove target % :key #'spring-target)))
+  (alexandria:removef (particle-springs particle) target :key #'spring-target))
 
 
 (defun particle-update! (particle)

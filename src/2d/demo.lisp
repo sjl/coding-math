@@ -1,7 +1,7 @@
 (in-package #:coding-math.2d.demo)
 
 ;;;; Config
-(setf *bypass-cache* t)
+(defparameter *bypass-cache* t)
 (defparameter *width* 600)
 (defparameter *height* 600)
 
@@ -107,7 +107,7 @@
                              0.00 0.00 0.00 0.00
                              0.00 0.00 0.00 1.00)))
      (weights (list 0.85 0.07 0.07 0.01))
-     (wl (make-weightlist transforms weights))
+     (wl (losh:make-weightlist (mapcar #'cons weights transforms)))
      (point (sb-cga::vec (random 1.0) (random 1.0) 0.0))
      (dirty t)
      ;; Pens
@@ -136,7 +136,7 @@
                      (* 50 (aref point 1))
                      0.5
                      0.5))
-      (zapf point (sb-cga::transform-point % (weightlist-random wl))))
+      (setf point (sb-cga::transform-point point (losh:weightlist-random wl))))
 
     )
   ;;
@@ -221,4 +221,4 @@
 
 
 ;;;; Run
-; (defparameter *demo* (make-instance 'demo))
+;; (defparameter *demo* (make-instance 'demo))
